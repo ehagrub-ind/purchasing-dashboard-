@@ -1,0 +1,37 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: purchasing
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: purchasing123
+    ports:
+      - "5436:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d purchasing"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "4100:4100"
+    environment:
+      DATABASE_URL: postgresql://admin:purchasing123@db:5432/purchasing
+      PORT: 4100
+      NODE_ENV: production
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend/src:/app/src
+      - ./data:/app/data
+      - ./frontend:/app/public
+
+volumes:
+  pgdata:

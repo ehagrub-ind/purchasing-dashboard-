@@ -1,0 +1,100 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Supplier {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  wilayah   String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  purchases Purchase[]
+  payments  Payment[]
+
+  @@map("suppliers")
+}
+
+model Purchase {
+  id         Int      @id @default(autoincrement())
+  date       DateTime
+  supplierId Int      @map("supplier_id")
+  wilayah    String
+  deskripsi  String
+  jenis      String
+  qty        Float
+  price      Float
+  total      Float
+  kategori   String
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  supplier Supplier @relation(fields: [supplierId], references: [id])
+
+  @@index([wilayah])
+  @@index([kategori])
+  @@index([supplierId])
+  @@index([date])
+  @@map("purchases")
+}
+
+model Payment {
+  id         Int      @id @default(autoincrement())
+  date       DateTime
+  supplierId Int      @map("supplier_id")
+  wilayah    String
+  deskripsi  String
+  amount     Float
+  type       String
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  supplier Supplier @relation(fields: [supplierId], references: [id])
+
+  @@index([supplierId])
+  @@index([type])
+  @@index([date])
+  @@map("payments")
+}
+
+model Kas {
+  id         Int      @id @default(autoincrement())
+  date       DateTime
+  wilayah    String
+  deskripsi  String
+  masuk      Float    @default(0)
+  keluar     Float    @default(0)
+  balance    Float    @default(0)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([wilayah])
+  @@map("kas")
+}
+
+model Operasional {
+  id         Int      @id @default(autoincrement())
+  wilayah    String
+  deskripsi  String
+  jumlah     Float
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([wilayah])
+  @@map("operasional")
+}
+
+model Fee {
+  id         Int      @id @default(autoincrement())
+  partai     Int
+  wilayah    String
+  kategori   String
+  qty        Float
+  fee        Float
+  total      Float
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([partai])
+  @@index([wilayah])
+  @@map("fees")
+}

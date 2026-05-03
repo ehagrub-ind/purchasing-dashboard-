@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Purchasing Dashboard - Pak Regen</title>
+  <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="sidebar-logo">Purchasing</div>
+    </div>
+
+    <div class="sidebar-nav">
+      <div class="sidebar-section">MAIN NAVIGATION</div>
+
+      <div class="nav-item" data-page="overview">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+        <span class="nav-label">Home</span>
+      </div>
+      <div class="nav-item active" data-page="overview">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        <span class="nav-label">Overview</span>
+        <span class="nav-badge">5</span>
+      </div>
+      <div class="nav-item" data-page="suppliers">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        <span class="nav-label">Supplier</span>
+      </div>
+      <div class="nav-item" data-page="purchases">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+        <span class="nav-label">Pembelian</span>
+      </div>
+      <div class="nav-item" data-page="finance">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+        <span class="nav-label">Keuangan</span>
+      </div>
+      <div class="nav-item" data-page="fees">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        <span class="nav-label">Fee Report</span>
+      </div>
+
+      <div class="sidebar-section" style="margin-top:24px">ANALYTICS &amp; REPORTS</div>
+
+      <div class="nav-item" data-page="overview">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        <span class="nav-label">Analytics</span>
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-footer-name">Pak Regen</div>
+      <div class="sidebar-footer-role">Administrator</div>
+    </div>
+  </aside>
+
+  <div class="main-wrapper">
+    <header class="topbar">
+      <div class="topbar-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" placeholder="Search supplier, pembelian, wilayah...">
+      </div>
+
+      <div class="topbar-actions">
+        <button class="btn btn-primary">New Purchase</button>
+        <button class="btn-text">Export</button>
+
+        <div class="topbar-bell">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+          <span class="topbar-bell-badge">3</span>
+        </div>
+
+        <div class="topbar-user">
+          <div class="topbar-avatar">PR</div>
+          <div>
+            <div class="topbar-user-name">Pak Regen</div>
+            <div class="topbar-user-role">Administrator</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="main" id="app-content">
+      <div class="loading">
+        <div class="spinner"></div>
+        <span>Memuat dashboard...</span>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

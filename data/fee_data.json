@@ -1,0 +1,58 @@
+[
+  {
+    "partai": 2,
+    "wilayah": "All",
+    "kategori": "Brangkas & Retul 9up",
+    "qty": 356.901,
+    "fee": 50,
+    "total": 17845.05
+  },
+  {
+    "partai": 3,
+    "wilayah": "All",
+    "kategori": "Brangkas & Retul 9up",
+    "qty": 106.281,
+    "fee": 50,
+    "total": 5314.05
+  },
+  {
+    "partai": 4,
+    "wilayah": "All",
+    "kategori": "Brangkas & Retul 9up",
+    "qty": 344.01,
+    "fee": 50,
+    "total": 17200.5
+  },
+  {
+    "partai": 5,
+    "wilayah": "All",
+    "kategori": "Brangkas & Retul 9up",
+    "qty": 317.61800000000005,
+    "fee": 50,
+    "total": 15880.900000000003
+  },
+  {
+    "partai": 6,
+    "wilayah": "All",
+    "kategori": "Brangkas & Retul 9up",
+    "qty": 360.235,
+    "fee": 50,
+    "total": 18011.75
+  },
+  {
+    "partai": 7,
+    "wilayah": "All",
+    "kategori": "Brangkas & Retul 9up",
+    "qty": 31.19,
+    "fee": 50,
+    "total": 1559.5
+  },
+  {
+    "partai": 8,
+    "wilayah": "All",
+    "kategori": "Brangkas & Retul 9up",
+    "qty": 28.37,
+    "fee": 50,
+    "total": 1418.5
+  }
+]

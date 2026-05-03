@@ -1,0 +1,582 @@
+[
+  {
+    "wilayah": "Jateng",
+    "deskripsi": "Indra",
+    "jumlah": 204.0
+  },
+  {
+    "wilayah": "Jateng",
+    "deskripsi": "Indra",
+    "jumlah": 152.0
+  },
+  {
+    "wilayah": "Jateng",
+    "deskripsi": "Indra",
+    "jumlah": 100.0
+  },
+  {
+    "wilayah": "Jateng",
+    "deskripsi": "Mas debi jemput barang",
+    "jumlah": 200.0
+  },
+  {
+    "wilayah": "Jateng",
+    "deskripsi": "Bensin luxio",
+    "jumlah": 400.0
+  },
+  {
+    "wilayah": "Jabar",
+    "deskripsi": "Bensin",
+    "jumlah": 400.0
+  },
+  {
+    "wilayah": "Jabar",
+    "deskripsi": "Alfa mart",
+    "jumlah": 150.0
+  },
+  {
+    "wilayah": "Jabar",
+    "deskripsi": "Makan",
+    "jumlah": 296.0
+  },
+  {
+    "wilayah": "Jabar",
+    "deskripsi": "Rokok",
+    "jumlah": 127.9
+  },
+  {
+    "wilayah": "Jabar",
+    "deskripsi": "Roti, the, gula , Rokok",
+    "jumlah": 233.0
+  },
+  {
+    "wilayah": "Jabar",
+    "deskripsi": "Bensin Memet",
+    "jumlah": 500.0
+  },
+  {
+    "wilayah": "Jabar",
+    "deskripsi": "Makan dan rokok 3 orang",
+    "jumlah": 305.0
+  },
+  {
+    "wilayah": "Jabar",
+    "deskripsi": "Bensin",
+    "jumlah": 400.0
+  },
+  {
+    "wilayah": "Jabar",
+    "deskripsi": "Jajan Depan Ruko",
+    "jumlah": 75.0
+  },
+  {
+    "wilayah": "Jabar",
+    "deskripsi": "Rokok",
+    "jumlah": 100.0
+  },
+  {
+    "wilayah": "Jabar",
+    "deskripsi": "E tol",
+    "jumlah": 300.0
+  },
+  {
+    "wilayah": "Jabar",
+    "deskripsi": "Makan ber -3",
+    "jumlah": 200.0
+  },
+  {
+    "wilayah": "Jabar",
+    "deskripsi": "Rokok ber - 3",
+    "jumlah": 150.0
+  },
+  {
+    "wilayah": "Jabar",
+    "deskripsi": "TF Istri Pak regen",
+    "jumlah": 1000.0
+  },
+  {
+    "wilayah": "Jabar",
+    "deskripsi": "TF Istri Mas Debi",
+    "jumlah": 1000.0
+  },
+  {
+    "wilayah": "Jabar",
+    "deskripsi": "Bensin di serang banten",
+    "jumlah": 300.0
+  },
+  {
+    "wilayah": "Jabar",
+    "deskripsi": "Rokok dan jajan di Alfa mart",
+    "jumlah": 268.0
+  },
+  {
+    "wilayah": "Jabar",
+    "deskripsi": "Makan",
+    "jumlah": 100.0
+  },
+  {
+    "wilayah": "Jabar",
+    "deskripsi": "E tol",
+    "jumlah": 500.0
+  },
+  {
+    "wilayah": "Jabar",
+    "deskripsi": "Bensin di KM102 arah ke timur",
+    "jumlah": 400.0
+  },
+  {
+    "wilayah": "Jabar",
+    "deskripsi": "Rokok dan aqua di alfa mart",
+    "jumlah": 289.0
+  },
+  {
+    "wilayah": "Jabar",
+    "deskripsi": "Transport untuk mas api",
+    "jumlah": 1000.0
+  },
+  {
+    "wilayah": "Jabar",
+    "deskripsi": "Uang Makan Hendra cirebon",
+    "jumlah": 400.0
+  },
+  {
+    "wilayah": "Jabar",
+    "deskripsi": "Bensin di purbalingga",
+    "jumlah": 250.0
+  },
+  {
+    "wilayah": "Jabar",
+    "deskripsi": "Service mobil Luxio",
+    "jumlah": 645.0
+  },
+  {
+    "wilayah": "Jabar",
+    "deskripsi": "Rokok dan makan",
+    "jumlah": 100.0
+  },
+  {
+    "wilayah": "Jatim",
+    "deskripsi": "e-tol ke jatim",
+    "jumlah": 1000.0
+  },
+  {
+    "wilayah": "Jatim",
+    "deskripsi": "beli bensin di boletsari",
+    "jumlah": 400.0
+  },
+  {
+    "wilayah": "Jatim",
+    "deskripsi": "beli rokok, aqua, jajanan, dll",
+    "jumlah": 300.0
+  },
+  {
+    "wilayah": "Jatim",
+    "deskripsi": "beli rambut potongan salon",
+    "jumlah": 150.0
+  },
+  {
+    "wilayah": "Jatim",
+    "deskripsi": "tf ke istri deby",
+    "jumlah": 1000.0
+  },
+  {
+    "wilayah": "Jatim",
+    "deskripsi": "beli bensin luxio di madiun",
+    "jumlah": 400.0
+  },
+  {
+    "wilayah": "Jatim",
+    "deskripsi": "beli bensin luxio di bondowoso",
+    "jumlah": 250.0
+  },
+  {
+    "wilayah": "Jatim",
+    "deskripsi": "tinggalan untuk istri dani jatim",
+    "jumlah": 200.0
+  },
+  {
+    "wilayah": "Jatim",
+    "deskripsi": "ongkos paket jatim/dani",
+    "jumlah": 290.0
+  },
+  {
+    "wilayah": "Jatim",
+    "deskripsi": "beli bensin luxio di probolinggo",
+    "jumlah": 400.0
+  },
+  {
+    "wilayah": "Jatim",
+    "deskripsi": "makan dan rokok",
+    "jumlah": 200.0
+  },
+  {
+    "wilayah": "Jatim",
+    "deskripsi": "ongkos paket jatim/man/gandi",
+    "jumlah": 570.0
+  },
+  {
+    "wilayah": "Jatim",
+    "deskripsi": "makan dan rokok",
+    "jumlah": 200.0
+  },
+  {
+    "wilayah": "Jatim",
+    "deskripsi": "untuk operasional hasan ke usb",
+    "jumlah": 500.0
+  },
+  {
+    "wilayah": "Jatim",
+    "deskripsi": "v-untuk jatim/man",
+    "jumlah": 2000.0
+  },
+  {
+    "wilayah": "Jatim",
+    "deskripsi": "pijat/urut badan",
+    "jumlah": 250.0
+  },
+  {
+    "wilayah": "Jatim",
+    "deskripsi": "makan dan rokok",
+    "jumlah": 200.0
+  },
+  {
+    "wilayah": "Jatim",
+    "deskripsi": "jasa paket",
+    "jumlah": 100.0
+  },
+  {
+    "wilayah": "Jatim",
+    "deskripsi": "beli bensin luxio di basuki",
+    "jumlah": 400.0
+  },
+  {
+    "wilayah": "Jatim",
+    "deskripsi": "makan dan rokok",
+    "jumlah": 200.0
+  },
+  {
+    "wilayah": "Jatim",
+    "deskripsi": "beli bensin indra wonosobo",
+    "jumlah": 200.0
+  },
+  {
+    "wilayah": "Jatim",
+    "deskripsi": "beli rokok se slop",
+    "jumlah": 550.0
+  },
+  {
+    "wilayah": "Jatim",
+    "deskripsi": "jasa gandi/jatim",
+    "jumlah": 800.0
+  },
+  {
+    "wilayah": "Jatim",
+    "deskripsi": "jasa untuk man/jatim",
+    "jumlah": 700.0
+  },
+  {
+    "wilayah": "Jatim",
+    "deskripsi": "untuk jajan anak",
+    "jumlah": 2000.0
+  },
+  {
+    "wilayah": "Jatim",
+    "deskripsi": "beli rokok dan makan",
+    "jumlah": 200.0
+  },
+  {
+    "wilayah": "Jatim",
+    "deskripsi": "makan, rokok, kopi",
+    "jumlah": 250.0
+  },
+  {
+    "wilayah": "Jatim",
+    "deskripsi": "bensin luxio di paiton",
+    "jumlah": 400.0
+  },
+  {
+    "wilayah": "Jatim",
+    "deskripsi": "e-tol dari jatim ke jabar",
+    "jumlah": 1000.0
+  },
+  {
+    "wilayah": "Jatim",
+    "deskripsi": "makan dan rokok",
+    "jumlah": 250.0
+  },
+  {
+    "wilayah": "Jatim",
+    "deskripsi": "bensin luxio di ngawi",
+    "jumlah": 450.0
+  },
+  {
+    "wilayah": "Jatim",
+    "deskripsi": "bensin luxio di tegal",
+    "jumlah": 400.0
+  },
+  {
+    "wilayah": "Jatim",
+    "deskripsi": "makan dan rokok",
+    "jumlah": 250.0
+  },
+  {
+    "wilayah": "Jatim",
+    "deskripsi": "tf ke istri deby",
+    "jumlah": 1000.0
+  },
+  {
+    "wilayah": "Mix",
+    "deskripsi": "beli rokok disaat pulang dari gudang",
+    "jumlah": 75.0
+  },
+  {
+    "wilayah": "Mix",
+    "deskripsi": "beli rokok dll",
+    "jumlah": 100.0
+  },
+  {
+    "wilayah": "Mix",
+    "deskripsi": "boki-indra",
+    "jumlah": 500.0
+  },
+  {
+    "wilayah": "Mix",
+    "deskripsi": "husen nebus obat",
+    "jumlah": 1800.0
+  },
+  {
+    "wilayah": "Mix",
+    "deskripsi": "beli bensin dari pbg ke usb",
+    "jumlah": 200.0
+  },
+  {
+    "wilayah": "Mix",
+    "deskripsi": "jasa indra wonosobo",
+    "jumlah": 500.0
+  },
+  {
+    "wilayah": "Mix",
+    "deskripsi": "beli bensin luxio di slawi",
+    "jumlah": 400.0
+  },
+  {
+    "wilayah": "Mix",
+    "deskripsi": "makan dan rokok",
+    "jumlah": 200.0
+  },
+  {
+    "wilayah": "Mix",
+    "deskripsi": "beli bensin luxio di serang",
+    "jumlah": 400.0
+  },
+  {
+    "wilayah": "Mix",
+    "deskripsi": "e-tol",
+    "jumlah": 500.0
+  },
+  {
+    "wilayah": "Mix",
+    "deskripsi": "jasa riyan jabar",
+    "jumlah": 600.0
+  },
+  {
+    "wilayah": "Mix",
+    "deskripsi": "makan dan rokok",
+    "jumlah": 200.0
+  },
+  {
+    "wilayah": "Mix",
+    "deskripsi": "beli bensin luxio di cirebon",
+    "jumlah": 400.0
+  },
+  {
+    "wilayah": "Mix",
+    "deskripsi": "jasa paket dari bogor ke pbg",
+    "jumlah": 2500.0
+  },
+  {
+    "wilayah": "Mix",
+    "deskripsi": "makan dan rokok",
+    "jumlah": 200.0
+  },
+  {
+    "wilayah": "Mix",
+    "deskripsi": "beli plastik",
+    "jumlah": 100.0
+  },
+  {
+    "wilayah": "Mix",
+    "deskripsi": "beli bensin apv",
+    "jumlah": 300.0
+  },
+  {
+    "wilayah": "Mix",
+    "deskripsi": "beli jajan",
+    "jumlah": 500.0
+  },
+  {
+    "wilayah": "Mix",
+    "deskripsi": "admin dan bensin indra wonosobo",
+    "jumlah": 100.0
+  },
+  {
+    "wilayah": "Mix",
+    "deskripsi": "jasa rendra wonosobo",
+    "jumlah": 600.0
+  },
+  {
+    "wilayah": "Mix",
+    "deskripsi": "ambil barang dari cirebon dan wonosobo",
+    "jumlah": 1500.0
+  },
+  {
+    "wilayah": "Mix",
+    "deskripsi": "jasa rendra cirebon",
+    "jumlah": 500.0
+  },
+  {
+    "wilayah": "Mix",
+    "deskripsi": "beli bensin luxio di cirebon",
+    "jumlah": 350.0
+  },
+  {
+    "wilayah": "Mix",
+    "deskripsi": "beli plastik",
+    "jumlah": 150.0
+  },
+  {
+    "wilayah": "Mix",
+    "deskripsi": "makan dan rokok",
+    "jumlah": 200.0
+  },
+  {
+    "wilayah": "Mix",
+    "deskripsi": "cuci mobil luxio putih",
+    "jumlah": 50.0
+  },
+  {
+    "wilayah": "Mix",
+    "deskripsi": "makan dan rokok",
+    "jumlah": 200.0
+  },
+  {
+    "wilayah": "Mix",
+    "deskripsi": "beli jas hujan indra",
+    "jumlah": 50.0
+  },
+  {
+    "wilayah": "Mix",
+    "deskripsi": "ongkos paket jatim/man",
+    "jumlah": 200.0
+  },
+  {
+    "wilayah": "Mix",
+    "deskripsi": "untuk yang ambil paket",
+    "jumlah": 100.0
+  },
+  {
+    "wilayah": "Mix",
+    "deskripsi": "beli bensin luxio di pemalang",
+    "jumlah": 400.0
+  },
+  {
+    "wilayah": "Mix",
+    "deskripsi": "makan dan rokok",
+    "jumlah": 300.0
+  },
+  {
+    "wilayah": "Mix",
+    "deskripsi": "beli bensin di jatibening/jkt",
+    "jumlah": 400.0
+  },
+  {
+    "wilayah": "Mix",
+    "deskripsi": "husen ke pemalang",
+    "jumlah": 500.0
+  },
+  {
+    "wilayah": "Mix",
+    "deskripsi": "husen ke wonosobo",
+    "jumlah": 500.0
+  },
+  {
+    "wilayah": "Mix",
+    "deskripsi": "ongkos paket kalog/nasrul jatim",
+    "jumlah": 300.0
+  },
+  {
+    "wilayah": "Mix",
+    "deskripsi": "interten bersatu yudi dan anak budidaya",
+    "jumlah": 5575.0
+  },
+  {
+    "wilayah": "Mix",
+    "deskripsi": "makan dan rokok",
+    "jumlah": 200.0
+  },
+  {
+    "wilayah": "Mix",
+    "deskripsi": "beli hp indra wonosobo",
+    "jumlah": 1000.0
+  },
+  {
+    "wilayah": "Mix",
+    "deskripsi": "beli bensin luxio di cirebon",
+    "jumlah": 400.0
+  },
+  {
+    "wilayah": "Mix",
+    "deskripsi": "makan dan rokok",
+    "jumlah": 250.0
+  },
+  {
+    "wilayah": "Mix",
+    "deskripsi": "makan dan rokok",
+    "jumlah": 250.0
+  },
+  {
+    "wilayah": "Mix",
+    "deskripsi": "rendra dan rafi di cirebon",
+    "jumlah": 550.0
+  },
+  {
+    "wilayah": "Mix",
+    "deskripsi": "beli bensin luxio di kerawang",
+    "jumlah": 400.0
+  },
+  {
+    "wilayah": "Mix",
+    "deskripsi": "makan dan rokok",
+    "jumlah": 250.0
+  },
+  {
+    "wilayah": "Mix",
+    "deskripsi": "e-tol",
+    "jumlah": 500.0
+  },
+  {
+    "wilayah": "Mix",
+    "deskripsi": "makan dan rokok",
+    "jumlah": 250.0
+  },
+  {
+    "wilayah": "Mix",
+    "deskripsi": "beli bensin luxio di jkt/bekasi",
+    "jumlah": 450.0
+  },
+  {
+    "wilayah": "Mix",
+    "deskripsi": "v-riyan jabar",
+    "jumlah": 660.0
+  },
+  {
+    "wilayah": "Mix",
+    "deskripsi": "makan dan rokok",
+    "jumlah": 250.0
+  },
+  {
+    "wilayah": "Mix",
+    "deskripsi": "beli bensin luxio di kalimalang",
+    "jumlah": 450.0
+  }
+]
