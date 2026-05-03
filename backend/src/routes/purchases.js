@@ -67,4 +67,38 @@ router.get('/stats', async (req, res) => {
   }
 });
 
+router.post('/', async (req, res) => {
+  try {
+    const { date, supplierId, wilayah, deskripsi, jenis, qty, price, kategori } = req.body;
+
+    if (!date || !supplierId || !wilayah || !jenis || !qty || !price || !kategori) {
+      return res.status(400).json({ error: 'Semua field wajib diisi' });
+    }
+
+    const qtyNum = parseFloat(qty);
+    const priceNum = parseFloat(price);
+    const total = qtyNum * priceNum;
+
+    const purchase = await prisma.purchase.create({
+      data: {
+        date: new Date(date),
+        supplierId: parseInt(supplierId),
+        wilayah,
+        deskripsi: deskripsi || `${jenis} ${kategori}`,
+        jenis,
+        qty: qtyNum,
+        price: priceNum,
+        total,
+        kategori
+      },
+      include: { supplier: { select: { name: true } } }
+    });
+
+    res.status(201).json(purchase);
+  } catch (err) {
+    console.error('Create purchase error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

@@ -4,6 +4,7 @@ import { render as renderPurchases } from './components/purchases.js';
 import { render as renderFinance } from './components/finance.js';
 import { render as renderFees } from './components/fees.js';
 import { render as renderAnalytics } from './components/analytics.js';
+import { showNewPurchaseModal } from './components/new-purchase.js';
 
 const pages = {
   overview: renderOverview,
@@ -39,6 +40,16 @@ document.addEventListener('DOMContentLoaded', () => {
   navItems.forEach(n => {
     n.addEventListener('click', () => navigate(n.dataset.page, n));
   });
+
+  const newPurchaseBtn = document.querySelector('.topbar-actions .btn-primary');
+  if (newPurchaseBtn) {
+    newPurchaseBtn.addEventListener('click', () => {
+      showNewPurchaseModal(() => {
+        const container = document.getElementById('app-content');
+        if (pages[currentPage]) pages[currentPage](container);
+      });
+    });
+  }
 
   navigate('overview');
 });

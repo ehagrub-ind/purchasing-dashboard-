@@ -23,6 +23,19 @@ export function getPurchases(params = {}) {
   return fetchJSON(`/purchases${qs ? '?' + qs : ''}`);
 }
 
+export async function createPurchase(data) {
+  const res = await fetch(`${API_BASE}/purchases`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `API error: ${res.status}`);
+  }
+  return res.json();
+}
+
 export function getPurchaseStats() {
   return fetchJSON('/purchases/stats');
 }
