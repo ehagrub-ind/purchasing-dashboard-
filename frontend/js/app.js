@@ -3,13 +3,15 @@ import { render as renderSuppliers } from './components/suppliers.js';
 import { render as renderPurchases } from './components/purchases.js';
 import { render as renderFinance } from './components/finance.js';
 import { render as renderFees } from './components/fees.js';
+import { render as renderAnalytics } from './components/analytics.js';
 
 const pages = {
   overview: renderOverview,
   suppliers: renderSuppliers,
   purchases: renderPurchases,
   finance: renderFinance,
-  fees: renderFees
+  fees: renderFees,
+  analytics: renderAnalytics
 };
 
 let currentPage = 'overview';
