@@ -25,9 +25,10 @@ function rpShort(val: number) {
 }
 
 function SumberBadge({ sumber }: { sumber: string }) {
-  const map: Record<string, { variant: 'info' | 'purple' | 'secondary'; label: string }> = {
+  const map: Record<string, { variant: 'info' | 'purple' | 'warning' | 'secondary'; label: string }> = {
     kas: { variant: 'info', label: 'Kas' },
     pembayaran: { variant: 'purple', label: 'Pembayaran' },
+    impor: { variant: 'warning', label: 'Impor' },
   };
   const m = map[sumber] || { variant: 'secondary' as const, label: sumber };
   return <Badge variant={m.variant}>{m.label}</Badge>;
@@ -62,6 +63,7 @@ const SUMBER_PILLS = [
   { value: '', label: 'Semua' },
   { value: 'kas', label: 'Kas' },
   { value: 'pembayaran', label: 'Pembayaran' },
+  { value: 'impor', label: 'Impor' },
 ];
 
 const WILAYAH_PILLS = [
@@ -69,6 +71,7 @@ const WILAYAH_PILLS = [
   { value: 'Jabar', label: 'Jabar' },
   { value: 'Jateng', label: 'Jateng' },
   { value: 'Jatim', label: 'Jatim' },
+  { value: 'Impor', label: 'Impor' },
 ];
 
 export default function ArusKasPage() {
@@ -126,7 +129,7 @@ export default function ArusKasPage() {
           icon={<ArrowDownCircle className="h-5 w-5" />}
           label="Total Uang Masuk"
           value={rpShort(stats?.total_masuk ?? 0)}
-          sub="Kas + Pembayaran masuk"
+          sub="Kas + Pembayaran masuk (lokal)"
           badge={<><ArrowUpRight className="h-3 w-3" />Masuk</>}
         />
         <GradientKPI
@@ -134,7 +137,7 @@ export default function ArusKasPage() {
           icon={<ArrowUpCircle className="h-5 w-5" />}
           label="Total Uang Keluar"
           value={rpShort(stats?.total_keluar ?? 0)}
-          sub="Kas + Pembayaran keluar"
+          sub="Kas + Pembayaran + Impor keluar"
           badge={<><ArrowDownRight className="h-3 w-3" />Keluar</>}
         />
         <GradientKPI
@@ -150,7 +153,7 @@ export default function ArusKasPage() {
           icon={<Hash className="h-5 w-5" />}
           label="Jumlah Transaksi"
           value={String(stats?.jumlah_transaksi ?? 0)}
-          sub="Total entri kas + pembayaran"
+          sub="Total entri kas + pembayaran + impor"
         />
       </div>
 
