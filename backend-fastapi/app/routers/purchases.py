@@ -17,7 +17,7 @@ async def list_purchases(
     kategori: str | None = None,
     supplier: int | None = None,
     page: int = Query(1, ge=1),
-    limit: int = Query(50, ge=1, le=200),
+    limit: int = Query(50, ge=1, le=1000),
     db: AsyncSession = Depends(get_db),
 ):
     q = select(Purchase).options(selectinload(Purchase.supplier))
