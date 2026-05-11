@@ -5,16 +5,16 @@ const path = require('path');
 const prisma = new PrismaClient();
 
 const PURCHASE_DATA = JSON.parse(
-  fs.readFileSync(path.join(__dirname, '../../data/purchase_data.json'), 'utf-8')
+  fs.readFileSync(path.join(__dirname, '../data/purchase_data.json'), 'utf-8')
 );
 const KAS_DATA = JSON.parse(
-  fs.readFileSync(path.join(__dirname, '../../data/kas_data.json'), 'utf-8')
+  fs.readFileSync(path.join(__dirname, '../data/kas_data.json'), 'utf-8')
 );
 const OP_DATA = JSON.parse(
-  fs.readFileSync(path.join(__dirname, '../../data/operasional_data.json'), 'utf-8')
+  fs.readFileSync(path.join(__dirname, '../data/operasional_data.json'), 'utf-8')
 );
 const FEE_DATA = JSON.parse(
-  fs.readFileSync(path.join(__dirname, '../../data/fee_data.json'), 'utf-8')
+  fs.readFileSync(path.join(__dirname, '../data/fee_data.json'), 'utf-8')
 );
 
 async function seed() {

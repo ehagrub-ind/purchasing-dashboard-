@@ -1,0 +1,104 @@
+from datetime import datetime
+from sqlalchemy import String, Float, Integer, DateTime, ForeignKey, Index
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+
+
+class Base(DeclarativeBase):
+    pass
+
+
+class Supplier(Base):
+    __tablename__ = "suppliers"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String, unique=True)
+    wilayah: Mapped[str] = mapped_column(String)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    purchases: Mapped[list["Purchase"]] = relationship(back_populates="supplier")
+    payments: Mapped[list["Payment"]] = relationship(back_populates="supplier")
+
+
+class Purchase(Base):
+    __tablename__ = "purchases"
+    __table_args__ = (
+        Index("ix_purchases_wilayah", "wilayah"),
+        Index("ix_purchases_kategori", "kategori"),
+        Index("ix_purchases_supplier_id", "supplier_id"),
+        Index("ix_purchases_date", "date"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    date: Mapped[datetime] = mapped_column(DateTime)
+    supplier_id: Mapped[int] = mapped_column(Integer, ForeignKey("suppliers.id"))
+    wilayah: Mapped[str] = mapped_column(String)
+    deskripsi: Mapped[str] = mapped_column(String, default="")
+    jenis: Mapped[str] = mapped_column(String, default="")
+    qty: Mapped[float] = mapped_column(Float, default=0)
+    price: Mapped[float] = mapped_column(Float, default=0)
+    total: Mapped[float] = mapped_column(Float, default=0)
+    kategori: Mapped[str] = mapped_column(String, default="Lainnya")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    supplier: Mapped["Supplier"] = relationship(back_populates="purchases")
+
+
+class Payment(Base):
+    __tablename__ = "payments"
+    __table_args__ = (
+        Index("ix_payments_supplier_id", "supplier_id"),
+        Index("ix_payments_type", "type"),
+        Index("ix_payments_date", "date"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    date: Mapped[datetime] = mapped_column(DateTime)
+    supplier_id: Mapped[int] = mapped_column(Integer, ForeignKey("suppliers.id"))
+    wilayah: Mapped[str] = mapped_column(String)
+    deskripsi: Mapped[str] = mapped_column(String, default="")
+    amount: Mapped[float] = mapped_column(Float, default=0)
+    type: Mapped[str] = mapped_column(String, default="IN")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    supplier: Mapped["Supplier"] = relationship(back_populates="payments")
+
+
+class Kas(Base):
+    __tablename__ = "kas"
+    __table_args__ = (Index("ix_kas_wilayah", "wilayah"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    date: Mapped[datetime] = mapped_column(DateTime)
+    wilayah: Mapped[str] = mapped_column(String)
+    deskripsi: Mapped[str] = mapped_column(String, default="")
+    masuk: Mapped[float] = mapped_column(Float, default=0)
+    keluar: Mapped[float] = mapped_column(Float, default=0)
+    balance: Mapped[float] = mapped_column(Float, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class Operasional(Base):
+    __tablename__ = "operasional"
+    __table_args__ = (Index("ix_operasional_wilayah", "wilayah"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    wilayah: Mapped[str] = mapped_column(String)
+    deskripsi: Mapped[str] = mapped_column(String, default="")
+    jumlah: Mapped[float] = mapped_column(Float, default=0)
+
+
+class Fee(Base):
+    __tablename__ = "fees"
+    __table_args__ = (
+        Index("ix_fees_partai", "partai"),
+        Index("ix_fees_wilayah", "wilayah"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    partai: Mapped[int] = mapped_column(Integer)
+    wilayah: Mapped[str] = mapped_column(String)
+    kategori: Mapped[str] = mapped_column(String)
+    qty: Mapped[float] = mapped_column(Float, default=0)
+    fee: Mapped[float] = mapped_column(Float, default=0)
+    total: Mapped[float] = mapped_column(Float, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

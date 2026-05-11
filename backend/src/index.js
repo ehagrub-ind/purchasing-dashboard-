@@ -9,6 +9,7 @@ const paymentRoutes = require('./routes/payments');
 const kasRoutes = require('./routes/kas');
 const operasionalRoutes = require('./routes/operasional');
 const feeRoutes = require('./routes/fees');
+const importRoutes = require('./routes/import');
 
 const app = express();
 const PORT = process.env.PORT || 4100;
@@ -27,6 +28,7 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/kas', kasRoutes);
 app.use('/api/operasional', operasionalRoutes);
 app.use('/api/fees', feeRoutes);
+app.use('/api/import', importRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

@@ -57,3 +57,11 @@ export function getOperasional() {
 export function getFees() {
   return fetchJSON('/fees');
 }
+
+export function getImport() {
+  return fetchJSON('/import');
+}
+
+export function getImportSummary() {
+  return fetchJSON('/import/summary');
+}
