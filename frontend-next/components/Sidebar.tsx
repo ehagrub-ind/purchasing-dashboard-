@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   Home, LayoutDashboard, Users, ShoppingBag, DollarSign,
-  FileText, BarChart3
+  FileText, BarChart3, Settings
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -18,6 +18,7 @@ const NAV_ITEMS = [
 
 const ANALYTICS_ITEMS = [
   { href: '/analytics', label: 'Analytics', icon: BarChart3 },
+  { href: '/pengaturan', label: 'Pengaturan', icon: Settings },
 ];
 
 export default function Sidebar() {
