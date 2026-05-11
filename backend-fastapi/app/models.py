@@ -175,6 +175,27 @@ class Operasional(Base):
     jumlah: Mapped[float] = mapped_column(Float, default=0)
 
 
+class Piutang(Base):
+    __tablename__ = "piutang"
+    __table_args__ = (
+        Index("ix_piutang_status", "status"),
+        Index("ix_piutang_pelanggan", "pelanggan"),
+        Index("ix_piutang_jatuh_tempo", "jatuh_tempo"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    tanggal: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    jatuh_tempo: Mapped[datetime] = mapped_column(DateTime)
+    pelanggan: Mapped[str] = mapped_column(String)
+    keterangan: Mapped[str] = mapped_column(String, default="")
+    jumlah: Mapped[float] = mapped_column(Float, default=0)
+    terbayar: Mapped[float] = mapped_column(Float, default=0)
+    status: Mapped[str] = mapped_column(String, default="belum_lunas")
+    wilayah: Mapped[str] = mapped_column(String, default="")
+    kategori: Mapped[str] = mapped_column(String, default="Lainnya")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
 class Fee(Base):
     __tablename__ = "fees"
     __table_args__ = (

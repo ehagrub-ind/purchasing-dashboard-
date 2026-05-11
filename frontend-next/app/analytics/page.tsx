@@ -4,14 +4,14 @@ import { useEffect, useState, useMemo } from 'react';
 import { api } from '@/lib/api';
 import { rupiah, kg, fmtDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import Loading from '@/components/Loading';
+import { PageSkeleton } from '@/components/Skeleton';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Shield, AlertTriangle, TrendingUp, Users, Zap } from 'lucide-react';
+import { Shield, AlertTriangle, TrendingUp, Users, Zap, Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 
-/* ─── Types ─── */
+const TH = "text-[11px] font-semibold uppercase tracking-wider text-muted-foreground";
 
 interface Anomaly {
   severity: 'tinggi' | 'sedang' | 'rendah';
@@ -22,7 +22,7 @@ interface Anomaly {
   value: number;
 }
 
-/* ─── Detection helpers ─── */
+/* ═══════════════ Detection Helpers ═══════════════ */
 
 function iqrOutliers(values: number[]) {
   if (values.length < 4) return { low: -Infinity, high: Infinity, iqr: 0 };
@@ -59,9 +59,7 @@ function detectPriceAnomalies(purchases: any[]): Anomaly[] {
           severity: Math.abs(Number(pct)) > 100 ? 'tinggi' : 'sedang',
           type: 'Harga Tidak Wajar',
           description: `${item.supplier?.name || '-'} — ${kat}: ${rupiah(item.price)}/kg (avg ${rupiah(avg)}/kg, ${Number(pct) > 0 ? '+' : ''}${pct}%)`,
-          date: item.date,
-          wilayah: item.wilayah,
-          value: item.pricePerKg,
+          date: item.date, wilayah: item.wilayah, value: item.pricePerKg,
         });
       }
     }
@@ -80,9 +78,7 @@ function detectAmountOutliers(purchases: any[]): Anomaly[] {
       severity: (Number(p.total) > bounds.high + bounds.iqr ? 'tinggi' : 'sedang') as Anomaly['severity'],
       type: 'Nilai Transaksi Besar',
       description: `${p.supplier?.name || '-'}: ${rupiah(p.total)} (avg ${rupiah(avg)})`,
-      date: p.date,
-      wilayah: p.wilayah,
-      value: Number(p.total),
+      date: p.date, wilayah: p.wilayah, value: Number(p.total),
     }));
 }
 
@@ -93,12 +89,9 @@ function detectDuplicates(purchases: any[]): Anomaly[] {
     const key = `${p.date}_${p.supplierId}_${p.total}_${p.qty}`;
     if (seen[key]) {
       dupes.push({
-        severity: 'sedang',
-        type: 'Duplikasi Potensial',
+        severity: 'sedang', type: 'Duplikasi Potensial',
         description: `${p.supplier?.name || '-'}: ${rupiah(p.total)}, ${kg(p.qty)} — tanggal & nilai sama`,
-        date: p.date,
-        wilayah: p.wilayah,
-        value: Number(p.total),
+        date: p.date, wilayah: p.wilayah, value: Number(p.total),
       });
     }
     seen[key] = p;
@@ -140,9 +133,7 @@ function detectSupplierConcentration(suppliers: any[]): Anomaly[] {
         severity: (Number(pct) > 50 ? 'tinggi' : 'sedang') as Anomaly['severity'],
         type: 'Konsentrasi Supplier',
         description: `${sup.name} (${sup.wilayah}): ${pct}% dari total volume (${kg(sup.total_kg)})`,
-        date: null,
-        wilayah: sup.wilayah,
-        value: Number(pct),
+        date: null, wilayah: sup.wilayah, value: Number(pct),
       };
     });
 }
@@ -154,24 +145,21 @@ function detectOperasionalAnomalies(opData: any[]): Anomaly[] {
   return opData
     .filter((o: any) => Number(o.jumlah) > bounds.high)
     .map((o: any) => ({
-      severity: 'rendah' as const,
-      type: 'Operasional Besar',
+      severity: 'rendah' as const, type: 'Operasional Besar',
       description: `${o.wilayah}: ${rupiah(o.jumlah)} — ${o.deskripsi}`,
-      date: null,
-      wilayah: o.wilayah,
-      value: Number(o.jumlah),
+      date: null, wilayah: o.wilayah, value: Number(o.jumlah),
     }));
 }
 
-/* ─── Severity badge mapping ─── */
+/* ═══════════════ Severity Config ═══════════════ */
 
-const SEV_BADGE: Record<string, { variant: 'destructive' | 'warning' | 'info'; label: string }> = {
-  tinggi: { variant: 'destructive', label: 'Tinggi' },
-  sedang: { variant: 'warning', label: 'Sedang' },
-  rendah: { variant: 'info', label: 'Rendah' },
+const SEV_CONFIG: Record<string, { variant: 'destructive' | 'warning' | 'info'; label: string; gradient: string; icon: React.ReactNode }> = {
+  tinggi: { variant: 'destructive', label: 'Tinggi', gradient: 'gradient-card-pink', icon: <AlertTriangle className="h-5 w-5" /> },
+  sedang: { variant: 'warning', label: 'Sedang', gradient: 'gradient-card-orange', icon: <TrendingUp className="h-5 w-5" /> },
+  rendah: { variant: 'info', label: 'Rendah', gradient: 'gradient-card-blue', icon: <Zap className="h-5 w-5" /> },
 };
 
-/* ─── Page component ─── */
+/* ═══════════════ Page Component ═══════════════ */
 
 export default function AnalyticsPage() {
   const [anomalies, setAnomalies] = useState<Anomaly[]>([]);
@@ -179,13 +167,12 @@ export default function AnalyticsPage() {
   const [error, setError] = useState('');
   const [typeFilter, setTypeFilter] = useState('semua');
   const [sevFilter, setSevFilter] = useState('');
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     Promise.all([
-      api.getKas(),
-      api.getOperasional(),
-      api.getPurchases({ limit: 1000 }),
-      api.getSuppliers(),
+      api.getKas(), api.getOperasional(),
+      api.getPurchases({ limit: 1000 }), api.getSuppliers(),
     ]).then(([kas, op, purchData, suppliers]) => {
       const all = [
         ...detectPriceAnomalies(purchData.data || []),
@@ -211,154 +198,161 @@ export default function AnalyticsPage() {
     let list = anomalies;
     if (typeFilter !== 'semua') list = list.filter(a => a.type === typeFilter);
     if (sevFilter) list = list.filter(a => a.severity === sevFilter);
+    if (search) {
+      const s = search.toLowerCase();
+      list = list.filter(a => a.description.toLowerCase().includes(s) || a.wilayah.toLowerCase().includes(s));
+    }
     return list;
-  }, [anomalies, typeFilter, sevFilter]);
+  }, [anomalies, typeFilter, sevFilter, search]);
 
   const byType = useMemo(() => {
     const map: Record<string, number> = {};
-    for (const a of filtered) map[a.type] = (map[a.type] || 0) + 1;
-    return Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, 3);
-  }, [filtered]);
+    for (const a of anomalies) map[a.type] = (map[a.type] || 0) + 1;
+    return Object.entries(map).sort((a, b) => b[1] - a[1]);
+  }, [anomalies]);
 
-  if (error) return <div className="flex items-center justify-center p-12 text-red-500">Error: {error}</div>;
-  if (loading) return <Loading />;
-
-  const kpis = [
-    { label: 'Total Anomali', value: anomalies.length, sub: `${types.length} Jenis`, icon: Shield, color: 'text-violet-600 bg-violet-50' },
-    { label: 'Severity Tinggi', value: tinggi, sub: tinggi > 0 ? 'Perlu Aksi' : 'Aman', icon: AlertTriangle, color: tinggi > 0 ? 'text-red-600 bg-red-50' : 'text-emerald-600 bg-emerald-50' },
-    { label: 'Severity Sedang', value: sedang, sub: 'Review', icon: TrendingUp, color: 'text-amber-600 bg-amber-50' },
-    { label: 'Severity Rendah', value: rendah, sub: 'Info', icon: Zap, color: 'text-blue-600 bg-blue-50' },
-    { label: 'Supplier Berisiko', value: anomalies.filter(a => a.type === 'Konsentrasi Supplier').length, sub: 'Konsentrasi', icon: Users, color: 'text-emerald-600 bg-emerald-50' },
-  ];
+  if (error) return <div className="flex items-center justify-center p-12 text-destructive font-medium">Error: {error}</div>;
+  if (loading) return <PageSkeleton />;
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold tracking-tight">Analytics — Deteksi Anomali</h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          Analisis otomatis untuk mendeteksi transaksi tidak wajar, duplikasi, dan pola mencurigakan.
-        </p>
+        <h1 className="text-2xl font-bold tracking-tight">Analytics — Deteksi Anomali</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">Analisis otomatis untuk mendeteksi transaksi tidak wajar, duplikasi, dan pola mencurigakan</p>
       </div>
 
-      {/* KPI Cards */}
+      {/* Gradient KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        {kpis.map((k) => (
-          <Card key={k.label}>
-            <CardContent className="p-5">
-              <div className="flex items-center gap-3">
-                <div className={cn('flex items-center justify-center h-10 w-10 rounded-lg shrink-0', k.color)}>
-                  <k.icon className="h-5 w-5" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs text-muted-foreground truncate">{k.label}</p>
-                  <p className="text-2xl font-bold tracking-tight">{k.value}</p>
-                  <p className="text-xs text-muted-foreground">{k.sub}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+        <GradientKPI gradient="gradient-card-purple" icon={<Shield className="h-5 w-5" />} label="Total Anomali" value={String(anomalies.length)} sub={`${types.length} jenis`} />
+        <GradientKPI gradient={tinggi > 0 ? 'gradient-card-pink' : 'gradient-card-emerald'} icon={<AlertTriangle className="h-5 w-5" />} label="Severity Tinggi" value={String(tinggi)} sub={tinggi > 0 ? 'Perlu aksi' : 'Aman'} />
+        <GradientKPI gradient="gradient-card-orange" icon={<TrendingUp className="h-5 w-5" />} label="Severity Sedang" value={String(sedang)} sub="Review" />
+        <GradientKPI gradient="gradient-card-blue" icon={<Zap className="h-5 w-5" />} label="Severity Rendah" value={String(rendah)} sub="Info" />
+        <GradientKPI gradient="gradient-card-emerald" icon={<Users className="h-5 w-5" />} label="Supplier Berisiko" value={String(anomalies.filter(a => a.type === 'Konsentrasi Supplier').length)} sub="Konsentrasi" />
       </div>
+
+      {/* Tinggi Warning Banner */}
+      {tinggi > 0 && (
+        <div className="flex items-center gap-3 rounded-2xl border border-red-200 bg-red-50 px-5 py-3.5">
+          <div className="rounded-xl bg-red-100 p-2"><AlertTriangle className="h-4 w-4 text-red-600" /></div>
+          <p className="text-sm text-red-800">
+            <strong>{tinggi} anomali severity tinggi</strong> terdeteksi — perlu dicek segera: saldo minus, harga ekstrem, atau konsentrasi supplier.
+          </p>
+        </div>
+      )}
+
+      {/* Insight Cards — by Type */}
+      {byType.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          {byType.map(([type, count]) => {
+            const sevCounts = {
+              tinggi: anomalies.filter(a => a.type === type && a.severity === 'tinggi').length,
+              sedang: anomalies.filter(a => a.type === type && a.severity === 'sedang').length,
+              rendah: anomalies.filter(a => a.type === type && a.severity === 'rendah').length,
+            };
+            const topSev = sevCounts.tinggi > 0 ? 'tinggi' : sevCounts.sedang > 0 ? 'sedang' : 'rendah';
+            const isActive = typeFilter === type;
+            return (
+              <button key={type} onClick={() => setTypeFilter(isActive ? 'semua' : type)}
+                className={cn(
+                  'rounded-2xl border p-4 text-left transition-all hover:shadow-md',
+                  isActive ? 'ring-2 ring-primary border-primary bg-primary/5' : 'hover:border-primary/30'
+                )}
+              >
+                <div className={cn('inline-flex items-center justify-center h-8 w-8 rounded-lg mb-2',
+                  topSev === 'tinggi' ? 'bg-red-100 text-red-600' : topSev === 'sedang' ? 'bg-amber-100 text-amber-600' : 'bg-blue-100 text-blue-600'
+                )}>
+                  <AlertTriangle className="h-4 w-4" />
+                </div>
+                <p className="text-[11px] font-medium text-muted-foreground truncate">{type}</p>
+                <p className="text-xl font-bold tracking-tight mt-0.5">{count}</p>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Filters */}
-      <div className="space-y-3">
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className={cn(typeFilter === 'semua' && 'bg-primary text-primary-foreground hover:bg-primary/90')}
-            onClick={() => setTypeFilter('semua')}
-          >
-            Semua
-          </Button>
-          {types.map(t => (
-            <Button
-              key={t}
-              variant="outline"
-              size="sm"
-              className={cn(typeFilter === t && 'bg-primary text-primary-foreground hover:bg-primary/90')}
-              onClick={() => setTypeFilter(t)}
-            >
-              {t}
-            </Button>
-          ))}
-        </div>
-        <div className="flex flex-wrap gap-2">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+        <div className="flex items-center gap-2">
           {[
             { label: 'Semua Level', value: '' },
             { label: 'Tinggi', value: 'tinggi' },
             { label: 'Sedang', value: 'sedang' },
             { label: 'Rendah', value: 'rendah' },
           ].map(s => (
-            <Button
-              key={s.value}
-              variant="outline"
-              size="sm"
-              className={cn(sevFilter === s.value && 'bg-primary text-primary-foreground hover:bg-primary/90')}
-              onClick={() => setSevFilter(s.value)}
-            >
-              {s.label}
-            </Button>
+            <button key={s.value} onClick={() => setSevFilter(s.value)}
+              className={cn('rounded-full px-4 py-1.5 text-[13px] font-medium transition-all',
+                sevFilter === s.value ? 'bg-primary text-white shadow-md shadow-primary/25' : 'bg-white border text-muted-foreground hover:bg-muted/50'
+              )}>{s.label}</button>
           ))}
+        </div>
+        <div className="flex-1" />
+        <div className="relative w-64">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input placeholder="Cari anomali..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
         </div>
       </div>
 
       {/* Anomaly Table */}
       {filtered.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-            <Shield className="h-12 w-12 text-muted-foreground/40 mb-4" />
-            <p className="text-lg font-semibold">Tidak ada anomali ditemukan</p>
-            <p className="text-sm text-muted-foreground mt-1">Semua data terlihat normal untuk filter ini.</p>
+        <Card className="rounded-2xl">
+          <CardContent className="py-16 text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50">
+              <Shield className="h-7 w-7 text-emerald-500" />
+            </div>
+            <p className="font-semibold text-muted-foreground">Tidak ada anomali ditemukan</p>
+            <p className="text-sm text-muted-foreground/70 mt-1">Semua data terlihat normal untuk filter ini</p>
           </CardContent>
         </Card>
       ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Anomali Terdeteksi ({filtered.length})</CardTitle>
+        <Card className="rounded-2xl overflow-hidden">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-base font-semibold">Anomali Terdeteksi</CardTitle>
+                <CardDescription className="text-xs">{filtered.length} dari {anomalies.length} anomali</CardDescription>
+              </div>
+              {typeFilter !== 'semua' && (
+                <button onClick={() => setTypeFilter('semua')} className="text-[12px] font-medium text-primary hover:underline">
+                  Reset filter tipe
+                </button>
+              )}
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="max-h-[70vh] overflow-auto">
+          <CardContent className="p-0">
+            <div className="max-h-[65vh] overflow-auto">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Severity</TableHead>
-                    <TableHead>Tipe</TableHead>
-                    <TableHead>Wilayah</TableHead>
-                    <TableHead>Tanggal</TableHead>
-                    <TableHead>Deskripsi</TableHead>
+                  <TableRow className="border-b-2">
+                    <TableHead className={TH}>Severity</TableHead>
+                    <TableHead className={TH}>Tipe</TableHead>
+                    <TableHead className={TH}>Wilayah</TableHead>
+                    <TableHead className={TH}>Tanggal</TableHead>
+                    <TableHead className={TH}>Deskripsi</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filtered.map((a, i) => (
-                    <TableRow key={i}>
+                    <TableRow key={i} className="hover:bg-muted/30">
                       <TableCell>
-                        <Badge variant={SEV_BADGE[a.severity].variant}>
-                          {SEV_BADGE[a.severity].label}
-                        </Badge>
+                        <Badge variant={SEV_CONFIG[a.severity].variant}>{SEV_CONFIG[a.severity].label}</Badge>
                       </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">{a.type}</Badge>
-                      </TableCell>
+                      <TableCell><Badge variant="secondary" className="text-[11px]">{a.type}</Badge></TableCell>
                       <TableCell>
                         {a.wilayah ? (
                           <Badge variant={
                             a.wilayah.toLowerCase() === 'jatim' ? 'jatim'
                               : a.wilayah.toLowerCase() === 'jateng' ? 'jateng'
                               : a.wilayah.toLowerCase() === 'jabar' ? 'jabar'
-                              : 'outline'
-                          }>
-                            {a.wilayah}
-                          </Badge>
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
+                              : 'secondary'
+                          }>{a.wilayah}</Badge>
+                        ) : <span className="text-muted-foreground">-</span>}
                       </TableCell>
-                      <TableCell className="text-muted-foreground whitespace-nowrap">
+                      <TableCell className="text-sm tabular-nums text-muted-foreground whitespace-nowrap">
                         {a.date ? fmtDate(a.date) : '-'}
                       </TableCell>
-                      <TableCell className="max-w-md">{a.description}</TableCell>
+                      <TableCell className="text-sm max-w-md">{a.description}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -367,43 +361,23 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
       )}
+    </div>
+  );
+}
 
-      {/* Summary Insight Cards */}
-      {byType.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {byType.map(([type, count]) => {
-            const sevCounts = {
-              tinggi: anomalies.filter(a => a.type === type && a.severity === 'tinggi').length,
-              sedang: anomalies.filter(a => a.type === type && a.severity === 'sedang').length,
-              rendah: anomalies.filter(a => a.type === type && a.severity === 'rendah').length,
-            };
-            const topColor = sevCounts.tinggi > 0
-              ? 'text-red-600 bg-red-50'
-              : sevCounts.sedang > 0
-              ? 'text-amber-600 bg-amber-50'
-              : 'text-emerald-600 bg-emerald-50';
+/* ═══════════════ Gradient KPI Card ═══════════════ */
 
-            return (
-              <Card key={type}>
-                <CardContent className="p-5">
-                  <div className="flex items-start gap-4">
-                    <div className={cn('flex items-center justify-center h-10 w-10 rounded-lg shrink-0', topColor)}>
-                      <AlertTriangle className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <p className="font-semibold">{type}</p>
-                      <p className="text-2xl font-bold tracking-tight">{count} <span className="text-sm font-normal text-muted-foreground">anomali</span></p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Tinggi: {sevCounts.tinggi} | Sedang: {sevCounts.sedang} | Rendah: {sevCounts.rendah}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      )}
+function GradientKPI({ gradient, icon, label, value, sub }: {
+  gradient: string; icon: React.ReactNode; label: string; value: string; sub: string;
+}) {
+  return (
+    <div className={cn('rounded-2xl p-5 text-white relative overflow-hidden', gradient)}>
+      <div className="flex items-center gap-3 mb-3">
+        <div className="rounded-xl bg-white/20 p-2">{icon}</div>
+        <span className="text-[13px] font-medium text-white/80">{label}</span>
+      </div>
+      <p className="text-2xl font-extrabold tracking-tight">{value}</p>
+      <p className="text-[12px] text-white/60 mt-1">{sub}</p>
     </div>
   );
 }

@@ -4,8 +4,8 @@ import { useEffect, useState, useMemo } from 'react';
 import { api } from '@/lib/api';
 import { rupiah, rupiahFull, kg, num, fmtDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import Loading from '@/components/Loading';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { PageSkeleton } from '@/components/Skeleton';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,17 +14,13 @@ import {
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
 } from '@/components/ui/table';
 import {
-  Users, Package, Wallet, TrendingUp, ArrowLeft, Search, Download, RefreshCw, Plus, ChevronRight,
+  Users, Package, Wallet, TrendingUp, ArrowLeft, Search, Download,
+  Plus, ChevronRight, ArrowUpRight,
 } from 'lucide-react';
 
 interface Supplier {
-  id: number;
-  name: string;
-  wilayah: string;
-  total_kg: number;
-  total_transaksi: number;
-  total_masuk: number;
-  saldo: number;
+  id: number; name: string; wilayah: string;
+  total_kg: number; total_transaksi: number; total_masuk: number; saldo: number;
 }
 
 interface SupplierDetail extends Supplier {
@@ -33,7 +29,9 @@ interface SupplierDetail extends Supplier {
   payments: { date: string; deskripsi: string; type: string; amount: number }[];
 }
 
-/* ─────────────────────────── Main Page ─────────────────────────── */
+const TH = "text-[11px] font-semibold uppercase tracking-wider text-muted-foreground";
+
+/* ═══════════════ Main Page ═══════════════ */
 
 export default function SupplierPage() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -73,99 +71,60 @@ export default function SupplierPage() {
 
   async function openDetail(id: number) {
     setLoading(true);
-    try {
-      const s = await api.getSupplier(id);
-      setDetail(s);
-    } catch (e: any) {
-      setError(e.message);
-    }
+    try { setDetail(await api.getSupplier(id)); }
+    catch (e: any) { setError(e.message); }
     setLoading(false);
   }
 
-  if (error) return <div className="flex items-center justify-center py-20 text-destructive">Error: {error}</div>;
-  if (loading) return <Loading />;
+  if (error) return <div className="flex items-center justify-center py-20 text-destructive font-medium">Error: {error}</div>;
+  if (loading) return <PageSkeleton />;
+  if (detail) return <DetailView detail={detail} onBack={() => setDetail(null)} />;
 
-  if (detail) {
-    return <DetailView detail={detail} onBack={() => setDetail(null)} />;
-  }
+  const pills = [
+    { label: 'Semua', value: '' },
+    { label: 'Jateng', value: 'Jateng' },
+    { label: 'Jatim', value: 'Jatim' },
+    { label: 'Jabar', value: 'Jabar' },
+  ];
 
   return (
     <div className="space-y-6">
-      {/* ── Page Header ── */}
+      {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Supplier</h2>
-          <p className="text-sm text-muted-foreground">
-            Ringkasan supplier, total pembelian, dana masuk, dan saldo.
-          </p>
+          <h1 className="text-2xl font-bold tracking-tight">Supplier</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Ringkasan supplier, total pembelian, dana masuk, dan saldo</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button size="sm">
-            <Plus className="mr-1.5 h-4 w-4" />
-            Tambah Supplier
-          </Button>
-          <Button variant="outline" size="sm">
-            <Download className="mr-1.5 h-4 w-4" />
-            Export
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
-            <RefreshCw className="mr-1.5 h-4 w-4" />
-            Refresh
-          </Button>
+          <Button size="sm"><Plus className="mr-1.5 h-4 w-4" />Tambah Supplier</Button>
+          <Button size="sm" variant="outline"><Download className="mr-1.5 h-4 w-4" />Export</Button>
         </div>
       </div>
 
-      {/* ── Stat Cards ── */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          icon={Users}
-          label="Total Supplier"
-          value={String(suppliers.length)}
-          iconClassName="bg-blue-100 text-blue-600"
-          valueClassName="text-blue-600"
-        />
-        <StatCard
-          icon={Package}
-          label="Total Kg"
-          value={kg(totals.kg)}
-          iconClassName="bg-violet-100 text-violet-600"
-          valueClassName="text-violet-600"
-        />
-        <StatCard
-          icon={Wallet}
-          label="Total Dana Masuk"
-          value={rupiah(totals.masuk)}
-          iconClassName="bg-emerald-100 text-emerald-600"
-          valueClassName="text-emerald-600"
-        />
-        <StatCard
-          icon={TrendingUp}
-          label="Total Saldo"
-          value={rupiah(totals.saldo)}
-          iconClassName={totals.saldo >= 0 ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'}
-          valueClassName={totals.saldo >= 0 ? 'text-emerald-600' : 'text-amber-600'}
-        />
+      {/* Gradient KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <GradientKPI gradient="gradient-card-purple" icon={<Users className="h-5 w-5" />} label="Total Supplier" value={String(suppliers.length)} sub="Lokal & Impor" />
+        <GradientKPI gradient="gradient-card-blue" icon={<Package className="h-5 w-5" />} label="Total Volume" value={kg(totals.kg)} sub="Dari semua supplier" />
+        <GradientKPI gradient="gradient-card-emerald" icon={<Wallet className="h-5 w-5" />} label="Total Dana Masuk" value={rupiah(totals.masuk)} sub="Pembayaran ke supplier" badge={<><ArrowUpRight className="h-3 w-3" />Masuk</>} />
+        <GradientKPI gradient={totals.saldo >= 0 ? 'gradient-card-orange' : 'gradient-card-pink'} icon={<TrendingUp className="h-5 w-5" />} label="Total Saldo" value={rupiah(totals.saldo)} sub={totals.saldo >= 0 ? 'Saldo positif' : 'Saldo negatif'} />
       </div>
 
-      {/* ── Toolbar ── */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            type="text"
-            placeholder="Cari supplier..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="pl-9"
-          />
+      {/* Filter Row */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+        <div className="flex items-center gap-2">
+          {pills.map(p => (
+            <button key={p.value} onClick={() => setWilayah(p.value)}
+              className={cn('rounded-full px-4 py-1.5 text-[13px] font-medium transition-all',
+                wilayah === p.value ? 'bg-primary text-white shadow-md shadow-primary/25' : 'bg-white border text-muted-foreground hover:bg-muted/50'
+              )}>{p.label}</button>
+          ))}
         </div>
-        <Select value={wilayah} onChange={e => setWilayah(e.target.value)} className="w-full sm:w-44">
-          <option value="">Semua Wilayah</option>
-          <option value="Jatim">Jatim</option>
-          <option value="Jateng">Jateng</option>
-          <option value="Jabar">Jabar</option>
-        </Select>
-        <Select value={sort} onChange={e => setSort(e.target.value)} className="w-full sm:w-40">
+        <div className="flex-1" />
+        <div className="relative w-64">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input placeholder="Cari supplier..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+        </div>
+        <Select value={sort} onChange={e => setSort(e.target.value)} className="w-40">
           <option value="kg">Total Kg</option>
           <option value="transaksi">Transaksi</option>
           <option value="masuk">Dana Masuk</option>
@@ -173,13 +132,15 @@ export default function SupplierPage() {
         </Select>
       </div>
 
-      {/* ── Supplier Grid ── */}
+      {/* Supplier Grid */}
       {filtered.length === 0 ? (
-        <Card className="flex flex-col items-center justify-center py-16 text-center">
-          <CardContent>
-            <Users className="mx-auto mb-3 h-10 w-10 text-muted-foreground/50" />
-            <p className="text-lg font-medium">Supplier tidak ditemukan</p>
-            <p className="text-sm text-muted-foreground">Coba ubah kata pencarian atau filter wilayah.</p>
+        <Card className="rounded-2xl">
+          <CardContent className="py-16 text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+              <Users className="h-7 w-7 text-muted-foreground" />
+            </div>
+            <p className="font-semibold text-muted-foreground">Supplier tidak ditemukan</p>
+            <p className="text-sm text-muted-foreground/70 mt-1">Coba ubah kata pencarian atau filter wilayah</p>
           </CardContent>
         </Card>
       ) : (
@@ -193,48 +154,37 @@ export default function SupplierPage() {
   );
 }
 
-/* ─────────────────────────── Stat Card ─────────────────────────── */
+/* ═══════════════ Gradient KPI Card ═══════════════ */
 
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-  iconClassName,
-  valueClassName,
-}: {
-  icon: React.ElementType;
-  label: string;
-  value: string;
-  iconClassName?: string;
-  valueClassName?: string;
+function GradientKPI({ gradient, icon, label, value, sub, badge }: {
+  gradient: string; icon: React.ReactNode; label: string; value: string; sub: string; badge?: React.ReactNode;
 }) {
   return (
-    <Card>
-      <CardContent className="flex items-center gap-4 p-5">
-        <div className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-lg', iconClassName)}>
-          <Icon className="h-5 w-5" />
-        </div>
-        <div className="min-w-0">
-          <p className="text-xs font-medium text-muted-foreground">{label}</p>
-          <p className={cn('truncate text-xl font-bold tracking-tight', valueClassName)}>{value}</p>
-        </div>
-      </CardContent>
-    </Card>
+    <div className={cn('rounded-2xl p-5 text-white relative overflow-hidden', gradient)}>
+      <div className="flex items-center gap-3 mb-3">
+        <div className="rounded-xl bg-white/20 p-2">{icon}</div>
+        <span className="text-[13px] font-medium text-white/80">{label}</span>
+      </div>
+      <p className="text-2xl font-extrabold tracking-tight">{value}</p>
+      <div className="flex items-center gap-2 mt-1">
+        <p className="text-[12px] text-white/60">{sub}</p>
+        {badge && <span className="inline-flex items-center gap-1 rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-semibold">{badge}</span>}
+      </div>
+    </div>
   );
 }
 
-/* ─────────────────────────── Supplier Card ─────────────────────────── */
+/* ═══════════════ Supplier Card ═══════════════ */
 
-const WILAYAH_AVATAR: Record<string, string> = {
-  jatim: 'bg-blue-100 text-blue-700',
-  jateng: 'bg-emerald-100 text-emerald-700',
-  jabar: 'bg-amber-100 text-amber-700',
+const WILAYAH_GRADIENT: Record<string, string> = {
+  jatim: 'from-blue-500 to-blue-600',
+  jateng: 'from-emerald-500 to-emerald-600',
+  jabar: 'from-amber-500 to-amber-600',
+  impor: 'from-purple-500 to-purple-600',
 };
 
-const WILAYAH_VARIANT: Record<string, 'jatim' | 'jateng' | 'jabar'> = {
-  jatim: 'jatim',
-  jateng: 'jateng',
-  jabar: 'jabar',
+const WILAYAH_VARIANT: Record<string, 'jatim' | 'jateng' | 'jabar' | 'secondary'> = {
+  jatim: 'jatim', jateng: 'jateng', jabar: 'jabar',
 };
 
 function SupplierCard({ supplier: s, maxKg, onClick }: { supplier: Supplier; maxKg: number; onClick: () => void }) {
@@ -244,72 +194,57 @@ function SupplierCard({ supplier: s, maxKg, onClick }: { supplier: Supplier; max
   const saldoPositive = Number(s.saldo) >= 0;
 
   return (
-    <Card
-      className="cursor-pointer transition-all hover:shadow-md hover:ring-1 hover:ring-ring/20"
-      onClick={onClick}
-    >
-      {/* Top: avatar + name + wilayah badge */}
-      <CardHeader className="flex flex-row items-center gap-3 space-y-0 pb-3">
-        <div
-          className={cn(
-            'flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold',
-            WILAYAH_AVATAR[wLower] ?? 'bg-muted text-muted-foreground',
-          )}
-        >
-          {initials}
-        </div>
-        <div className="min-w-0 flex-1">
-          <CardTitle className="truncate text-sm font-semibold">{s.name}</CardTitle>
-          <Badge variant={WILAYAH_VARIANT[wLower] ?? 'secondary'} className="mt-1">
-            {s.wilayah}
-          </Badge>
-        </div>
-      </CardHeader>
-
-      {/* Body: 2x2 stats grid */}
-      <CardContent className="pb-3">
-        <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-          <div>
-            <p className="text-[11px] font-medium text-muted-foreground">Total Kg</p>
-            <p className="text-sm font-semibold">{kg(s.total_kg)}</p>
+    <Card className="rounded-2xl cursor-pointer transition-all hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-0.5 hover:ring-1 hover:ring-ring/20" onClick={onClick}>
+      <CardContent className="p-5">
+        {/* Avatar + Name */}
+        <div className="flex items-center gap-3 mb-4">
+          <div className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[11px] font-bold text-white bg-gradient-to-br', WILAYAH_GRADIENT[wLower] ?? 'from-gray-400 to-gray-500')}>
+            {initials}
           </div>
-          <div>
-            <p className="text-[11px] font-medium text-muted-foreground">Transaksi</p>
-            <p className="text-sm font-semibold">{num(s.total_transaksi)}</p>
-          </div>
-          <div>
-            <p className="text-[11px] font-medium text-muted-foreground">Dana Masuk</p>
-            <p className="text-sm font-semibold text-emerald-600">{rupiah(s.total_masuk)}</p>
-          </div>
-          <div>
-            <p className="text-[11px] font-medium text-muted-foreground">Saldo</p>
-            <p className={cn('text-sm font-semibold', saldoPositive ? 'text-emerald-600' : 'text-amber-600')}>
-              {rupiah(s.saldo)}
-            </p>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold truncate">{s.name}</p>
+            <Badge variant={WILAYAH_VARIANT[wLower] ?? 'secondary'} className="mt-0.5">{s.wilayah}</Badge>
           </div>
         </div>
 
-        {/* Progress bar */}
-        <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-muted">
-          <div
-            className="h-full rounded-full bg-primary transition-all"
-            style={{ width: `${pct}%` }}
-          />
+        {/* 2x2 Stats Grid */}
+        <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Volume</p>
+            <p className="text-sm font-bold tabular-nums">{kg(s.total_kg)}</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Transaksi</p>
+            <p className="text-sm font-bold tabular-nums">{num(s.total_transaksi)}</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Dana Masuk</p>
+            <p className="text-sm font-bold tabular-nums text-emerald-600">{rupiah(s.total_masuk)}</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Saldo</p>
+            <p className={cn('text-sm font-bold tabular-nums', saldoPositive ? 'text-emerald-600' : 'text-amber-600')}>{rupiah(s.saldo)}</p>
+          </div>
+        </div>
+
+        {/* Progress Bar */}
+        <div className="mt-4">
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+            <div className={cn('h-full rounded-full bg-gradient-to-r transition-all', WILAYAH_GRADIENT[wLower] ?? 'from-gray-400 to-gray-500')} style={{ width: `${pct}%` }} />
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="mt-3 pt-3 border-t flex items-center justify-between">
+          <span className="text-[11px] text-muted-foreground">{num(s.total_transaksi)} transaksi</span>
+          <span className="flex items-center gap-0.5 text-[11px] font-semibold text-primary">Detail<ChevronRight className="h-3 w-3" /></span>
         </div>
       </CardContent>
-
-      {/* Footer: detail link */}
-      <CardFooter className="border-t px-6 py-3">
-        <span className="flex items-center gap-1 text-xs font-medium text-primary">
-          Detail
-          <ChevronRight className="h-3.5 w-3.5" />
-        </span>
-      </CardFooter>
     </Card>
   );
 }
 
-/* ─────────────────────────── Detail View ─────────────────────────── */
+/* ═══════════════ Detail View ═══════════════ */
 
 function DetailView({ detail: s, onBack }: { detail: SupplierDetail; onBack: () => void }) {
   const wLower = s.wilayah.toLowerCase();
@@ -317,61 +252,48 @@ function DetailView({ detail: s, onBack }: { detail: SupplierDetail; onBack: () 
 
   return (
     <div className="space-y-6">
-      {/* Back button */}
       <Button variant="ghost" size="sm" onClick={onBack}>
-        <ArrowLeft className="mr-1.5 h-4 w-4" />
-        Kembali ke Daftar Supplier
+        <ArrowLeft className="mr-1.5 h-4 w-4" />Kembali ke Daftar
       </Button>
 
-      {/* Header: avatar + name + badge */}
+      {/* Header */}
       <div className="flex items-center gap-4">
-        <div
-          className={cn(
-            'flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-lg font-bold',
-            WILAYAH_AVATAR[wLower] ?? 'bg-muted text-muted-foreground',
-          )}
-        >
+        <div className={cn('flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-lg font-bold text-white bg-gradient-to-br', WILAYAH_GRADIENT[wLower] ?? 'from-gray-400 to-gray-500')}>
           {initials}
         </div>
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">{s.name}</h2>
-          <Badge variant={WILAYAH_VARIANT[wLower] ?? 'secondary'} className="mt-1">
-            {s.wilayah}
-          </Badge>
+          <h1 className="text-2xl font-bold tracking-tight">{s.name}</h1>
+          <Badge variant={WILAYAH_VARIANT[wLower] ?? 'secondary'} className="mt-1">{s.wilayah}</Badge>
         </div>
       </div>
 
-      {/* Summary stat cards */}
+      {/* Stat Cards */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <MiniStat label="Total Kg" value={kg(s.total_kg)} />
-        <MiniStat label="Transaksi" value={num(s.total_transaksi)} />
-        <MiniStat label="Dana Masuk" value={rupiah(s.total_masuk)} valueClassName="text-emerald-600" />
-        <MiniStat label="Saldo" value={rupiah(s.saldo)} valueClassName={Number(s.saldo) >= 0 ? 'text-emerald-600' : 'text-amber-600'} />
+        <GradientKPI gradient="gradient-card-blue" icon={<Package className="h-5 w-5" />} label="Total Kg" value={kg(s.total_kg)} sub="Volume pembelian" />
+        <GradientKPI gradient="gradient-card-purple" icon={<TrendingUp className="h-5 w-5" />} label="Transaksi" value={num(s.total_transaksi)} sub="Total transaksi" />
+        <GradientKPI gradient="gradient-card-emerald" icon={<Wallet className="h-5 w-5" />} label="Dana Masuk" value={rupiah(s.total_masuk)} sub="Total pembayaran" />
+        <GradientKPI gradient={Number(s.saldo) >= 0 ? 'gradient-card-orange' : 'gradient-card-pink'} icon={<TrendingUp className="h-5 w-5" />} label="Saldo" value={rupiah(s.saldo)} sub={Number(s.saldo) >= 0 ? 'Positif' : 'Negatif'} />
       </div>
 
       {/* Breakdown Kategori */}
       {s.by_kategori?.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Breakdown Kategori</CardTitle>
-          </CardHeader>
+        <Card className="rounded-2xl overflow-hidden">
+          <CardHeader className="pb-3"><CardTitle className="text-base font-semibold">Breakdown Kategori</CardTitle></CardHeader>
           <CardContent className="p-0">
             <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Kategori</TableHead>
-                  <TableHead className="text-right">Transaksi</TableHead>
-                  <TableHead className="text-right">Total Kg</TableHead>
-                  <TableHead className="text-right">Total Nilai</TableHead>
-                </TableRow>
-              </TableHeader>
+              <TableHeader><TableRow className="border-b-2">
+                <TableHead className={TH}>Kategori</TableHead>
+                <TableHead className={cn(TH, 'text-right')}>Transaksi</TableHead>
+                <TableHead className={cn(TH, 'text-right')}>Total Kg</TableHead>
+                <TableHead className={cn(TH, 'text-right')}>Total Nilai</TableHead>
+              </TableRow></TableHeader>
               <TableBody>
                 {s.by_kategori.map((k, i) => (
-                  <TableRow key={i}>
-                    <TableCell className="font-medium">{k.kategori}</TableCell>
-                    <TableCell className="text-right">{num(k.count)}</TableCell>
-                    <TableCell className="text-right">{kg(k.total_kg)}</TableCell>
-                    <TableCell className="text-right">{rupiahFull(k.total_nilai)}</TableCell>
+                  <TableRow key={i} className="hover:bg-muted/30">
+                    <TableCell className="font-semibold text-sm">{k.kategori}</TableCell>
+                    <TableCell className="text-right text-sm tabular-nums">{num(k.count)}</TableCell>
+                    <TableCell className="text-right text-sm tabular-nums">{kg(k.total_kg)}</TableCell>
+                    <TableCell className="text-right text-sm font-semibold tabular-nums">{rupiahFull(k.total_nilai)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -382,31 +304,27 @@ function DetailView({ detail: s, onBack }: { detail: SupplierDetail; onBack: () 
 
       {/* Pembelian */}
       {s.purchases?.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Pembelian ({s.purchases.length})</CardTitle>
-          </CardHeader>
+        <Card className="rounded-2xl overflow-hidden">
+          <CardHeader className="pb-3"><CardTitle className="text-base font-semibold">Pembelian ({s.purchases.length})</CardTitle></CardHeader>
           <CardContent className="p-0">
             <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Tanggal</TableHead>
-                  <TableHead>Jenis</TableHead>
-                  <TableHead>Kategori</TableHead>
-                  <TableHead className="text-right">Qty (kg)</TableHead>
-                  <TableHead className="text-right">Harga</TableHead>
-                  <TableHead className="text-right">Total</TableHead>
-                </TableRow>
-              </TableHeader>
+              <TableHeader><TableRow className="border-b-2">
+                <TableHead className={TH}>Tanggal</TableHead>
+                <TableHead className={TH}>Jenis</TableHead>
+                <TableHead className={TH}>Kategori</TableHead>
+                <TableHead className={cn(TH, 'text-right')}>Qty (kg)</TableHead>
+                <TableHead className={cn(TH, 'text-right')}>Harga</TableHead>
+                <TableHead className={cn(TH, 'text-right')}>Total</TableHead>
+              </TableRow></TableHeader>
               <TableBody>
                 {s.purchases.map((p, i) => (
-                  <TableRow key={i}>
-                    <TableCell>{fmtDate(p.date)}</TableCell>
-                    <TableCell>{p.jenis}</TableCell>
-                    <TableCell>{p.kategori}</TableCell>
-                    <TableCell className="text-right">{kg(p.qty)}</TableCell>
-                    <TableCell className="text-right">{rupiahFull(p.price)}</TableCell>
-                    <TableCell className="text-right font-medium">{rupiahFull(p.total)}</TableCell>
+                  <TableRow key={i} className="hover:bg-muted/30">
+                    <TableCell className="text-sm tabular-nums">{fmtDate(p.date)}</TableCell>
+                    <TableCell className="text-sm">{p.jenis}</TableCell>
+                    <TableCell><Badge variant="secondary" className="text-[11px]">{p.kategori}</Badge></TableCell>
+                    <TableCell className="text-right text-sm tabular-nums">{kg(p.qty)}</TableCell>
+                    <TableCell className="text-right text-sm tabular-nums">{rupiahFull(p.price)}</TableCell>
+                    <TableCell className="text-right text-sm font-semibold tabular-nums">{rupiahFull(p.total)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -417,29 +335,23 @@ function DetailView({ detail: s, onBack }: { detail: SupplierDetail; onBack: () 
 
       {/* Pembayaran */}
       {s.payments?.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Pembayaran ({s.payments.length})</CardTitle>
-          </CardHeader>
+        <Card className="rounded-2xl overflow-hidden">
+          <CardHeader className="pb-3"><CardTitle className="text-base font-semibold">Pembayaran ({s.payments.length})</CardTitle></CardHeader>
           <CardContent className="p-0">
             <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Tanggal</TableHead>
-                  <TableHead>Keterangan</TableHead>
-                  <TableHead>Tipe</TableHead>
-                  <TableHead className="text-right">Jumlah</TableHead>
-                </TableRow>
-              </TableHeader>
+              <TableHeader><TableRow className="border-b-2">
+                <TableHead className={TH}>Tanggal</TableHead>
+                <TableHead className={TH}>Keterangan</TableHead>
+                <TableHead className={TH}>Tipe</TableHead>
+                <TableHead className={cn(TH, 'text-right')}>Jumlah</TableHead>
+              </TableRow></TableHeader>
               <TableBody>
                 {s.payments.map((p, i) => (
-                  <TableRow key={i}>
-                    <TableCell>{fmtDate(p.date)}</TableCell>
-                    <TableCell>{p.deskripsi}</TableCell>
-                    <TableCell>
-                      <PaymentTypeBadge type={p.type} />
-                    </TableCell>
-                    <TableCell className="text-right font-medium">{rupiahFull(p.amount)}</TableCell>
+                  <TableRow key={i} className="hover:bg-muted/30">
+                    <TableCell className="text-sm tabular-nums">{fmtDate(p.date)}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{p.deskripsi}</TableCell>
+                    <TableCell><PaymentTypeBadge type={p.type} /></TableCell>
+                    <TableCell className="text-right text-sm font-semibold tabular-nums">{rupiahFull(p.amount)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -451,18 +363,7 @@ function DetailView({ detail: s, onBack }: { detail: SupplierDetail; onBack: () 
   );
 }
 
-/* ─────────────────────────── Small helpers ─────────────────────────── */
-
-function MiniStat({ label, value, valueClassName }: { label: string; value: string; valueClassName?: string }) {
-  return (
-    <Card>
-      <CardContent className="p-4">
-        <p className="text-xs font-medium text-muted-foreground">{label}</p>
-        <p className={cn('mt-0.5 text-lg font-bold tracking-tight', valueClassName)}>{value}</p>
-      </CardContent>
-    </Card>
-  );
-}
+/* ═══════════════ Helpers ═══════════════ */
 
 function PaymentTypeBadge({ type }: { type: string }) {
   const lower = type.toLowerCase();
@@ -470,6 +371,5 @@ function PaymentTypeBadge({ type }: { type: string }) {
   if (lower === 'cash' || lower === 'tunai') variant = 'success';
   else if (lower === 'transfer') variant = 'info';
   else if (lower === 'giro' || lower === 'cek') variant = 'warning';
-
   return <Badge variant={variant}>{type}</Badge>;
 }

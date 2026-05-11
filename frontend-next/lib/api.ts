@@ -250,6 +250,50 @@ export const api = {
     return res.json();
   },
 
+  // Arus Kas
+  getArusKas: (params: Record<string, any> = {}) => {
+    const qs = new URLSearchParams(params).toString();
+    return fetchJSON(`/arus-kas${qs ? '?' + qs : ''}`);
+  },
+  getArusKasStats: () => fetchJSON('/arus-kas/stats'),
+
+  // Hutang
+  getHutang: () => fetchJSON('/hutang'),
+  getHutangStats: () => fetchJSON('/hutang/stats'),
+  getHutangTimeline: (supplierId: number) => fetchJSON(`/hutang/${supplierId}/timeline`),
+  bayarHutang: async (supplierId: number, data: any) => {
+    const res = await fetch(`${BASE}/hutang/${supplierId}/bayar/`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+    if (!res.ok) throw new Error(`API ${res.status}`);
+    return res.json();
+  },
+
+  // Piutang
+  getPiutang: (params: Record<string, any> = {}) => {
+    const qs = new URLSearchParams(params).toString();
+    return fetchJSON(`/piutang${qs ? '?' + qs : ''}`);
+  },
+  getPiutangStats: () => fetchJSON('/piutang/stats'),
+  createPiutang: async (data: any) => {
+    const res = await fetch(`${BASE}/piutang/`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+    if (!res.ok) throw new Error(`API ${res.status}`);
+    return res.json();
+  },
+  updatePiutang: async (id: number, data: any) => {
+    const res = await fetch(`${BASE}/piutang/${id}/`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+    if (!res.ok) throw new Error(`API ${res.status}`);
+    return res.json();
+  },
+  bayarPiutang: async (id: number, nominal: number) => {
+    const res = await fetch(`${BASE}/piutang/${id}/bayar/`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nominal }) });
+    if (!res.ok) throw new Error(`API ${res.status}`);
+    return res.json();
+  },
+  deletePiutang: async (id: number) => {
+    const res = await fetch(`${BASE}/piutang/${id}/`, { method: 'DELETE' });
+    if (!res.ok) throw new Error(`API ${res.status}`);
+    return res.json();
+  },
+
   // Users / Tim
   getUsers: () => fetchJSON('/users'),
   createUser: async (data: any) => {

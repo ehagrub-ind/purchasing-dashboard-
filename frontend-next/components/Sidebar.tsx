@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Users, ShoppingBag, DollarSign,
-  FileText, BarChart3, Settings, Database, ChevronRight,
+  FileText, BarChart3, Settings, Database, ChevronRight, CreditCard, ArrowLeftRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -14,6 +14,8 @@ const NAV_ITEMS = [
   { href: '/master-data', label: 'Master Data', icon: Database },
   { href: '/pembelian', label: 'Pembelian', icon: ShoppingBag },
   { href: '/keuangan', label: 'Keuangan', icon: DollarSign },
+  { href: '/arus-kas', label: 'Arus Kas', icon: ArrowLeftRight },
+  { href: '/hutang', label: 'Hutang', icon: CreditCard },
   { href: '/fee-report', label: 'Fee Report', icon: FileText },
 ];
 
