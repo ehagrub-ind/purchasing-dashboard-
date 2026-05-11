@@ -1,29 +1,37 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { cn } from '@/lib/utils';
+import { api } from '@/lib/api';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
   User, Bell, Palette, Shield, Save, Check,
   Mail, Phone, MapPin, Building2, Eye, EyeOff,
+  Plus, Pencil, Trash2, X, Users, Loader2,
 } from 'lucide-react';
+
+const ROLE_COLORS: Record<string, string> = {
+  Owner: 'bg-amber-100 text-amber-700 border-amber-200',
+  Admin: 'bg-blue-100 text-blue-700 border-blue-200',
+  PIC: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+};
+
+const ROLE_BG: Record<string, string> = {
+  Owner: 'bg-amber-100 text-amber-700',
+  Admin: 'bg-blue-100 text-blue-700',
+  PIC: 'bg-emerald-100 text-emerald-700',
+};
 
 export default function PengaturanPage() {
   const [tab, setTab] = useState('profil');
   const [saved, setSaved] = useState(false);
-
-  const [profil, setProfil] = useState({
-    nama: 'Pak Regen',
-    email: 'pakregen@purchasing.co.id',
-    telepon: '0812-3456-7890',
-    perusahaan: 'Purchasing Bahan Baku',
-    alamat: 'Jawa Timur, Indonesia',
-    role: 'Administrator',
-  });
+  const [users, setUsers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const [notif, setNotif] = useState({
     transaksi: true,
@@ -40,6 +48,16 @@ export default function PengaturanPage() {
     barisPerHalaman: '50',
   });
 
+  const loadUsers = useCallback(() => {
+    api.getUsers().then(setUsers).catch(() => {}).finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => { loadUsers(); }, [loadUsers]);
+
+  const owner = users.find((u: any) => u.role === 'Owner') || {
+    nama: 'David', email: 'david@indohaircorp.co.id', telepon: '0812-3456-7890', role: 'Owner',
+  };
+
   function handleSave() {
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -50,7 +68,7 @@ export default function PengaturanPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Pengaturan</h2>
-          <p className="text-sm text-muted-foreground mt-1">Kelola profil, notifikasi, dan preferensi tampilan dashboard.</p>
+          <p className="text-sm text-muted-foreground mt-1">Kelola profil, tim, notifikasi, dan preferensi tampilan dashboard.</p>
         </div>
         <Button onClick={handleSave} disabled={saved}>
           {saved ? <Check className="mr-2 h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />}
@@ -61,13 +79,17 @@ export default function PengaturanPage() {
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="w-full sm:w-auto">
           <TabsTrigger value="profil"><User className="mr-2 h-4 w-4" />Profil</TabsTrigger>
+          <TabsTrigger value="tim"><Users className="mr-2 h-4 w-4" />Tim</TabsTrigger>
           <TabsTrigger value="notifikasi"><Bell className="mr-2 h-4 w-4" />Notifikasi</TabsTrigger>
           <TabsTrigger value="tampilan"><Palette className="mr-2 h-4 w-4" />Tampilan</TabsTrigger>
           <TabsTrigger value="keamanan"><Shield className="mr-2 h-4 w-4" />Keamanan</TabsTrigger>
         </TabsList>
 
         <TabsContent value="profil">
-          <ProfilTab profil={profil} setProfil={setProfil} />
+          <ProfilTab owner={owner} />
+        </TabsContent>
+        <TabsContent value="tim">
+          <TimTab users={users} loading={loading} onReload={loadUsers} />
         </TabsContent>
         <TabsContent value="notifikasi">
           <NotifikasiTab notif={notif} setNotif={setNotif} />
@@ -83,7 +105,20 @@ export default function PengaturanPage() {
   );
 }
 
-function ProfilTab({ profil, setProfil }: { profil: any; setProfil: (v: any) => void }) {
+/* ═══════════════════════════════════════════
+   Profil Tab
+   ═══════════════════════════════════════════ */
+
+function ProfilTab({ owner }: { owner: any }) {
+  const [profil, setProfil] = useState({
+    nama: owner.nama || 'David',
+    email: owner.email || '',
+    telepon: owner.telepon || '',
+    perusahaan: 'PT Indo Hair Corp',
+    alamat: 'Jawa Timur, Indonesia',
+    role: owner.role || 'Owner',
+  });
+
   function update(key: string, value: string) {
     setProfil((p: any) => ({ ...p, [key]: value }));
   }
@@ -94,12 +129,13 @@ function ProfilTab({ profil, setProfil }: { profil: any; setProfil: (v: any) => 
         <CardContent className="pt-6">
           <div className="flex flex-col items-center text-center">
             <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 text-2xl font-bold text-primary mb-4">
-              PR
+              {profil.nama.charAt(0).toUpperCase()}
             </div>
             <h3 className="text-lg font-semibold">{profil.nama}</h3>
-            <Badge variant="info" className="mt-1">{profil.role}</Badge>
+            <span className={cn('mt-1 inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold', ROLE_COLORS[profil.role] || 'bg-muted text-foreground')}>
+              {profil.role}
+            </span>
             <p className="text-sm text-muted-foreground mt-2">{profil.email}</p>
-            <Button variant="outline" size="sm" className="mt-4 w-full">Ganti Foto</Button>
           </div>
         </CardContent>
       </Card>
@@ -120,6 +156,217 @@ function ProfilTab({ profil, setProfil }: { profil: any; setProfil: (v: any) => 
     </div>
   );
 }
+
+/* ═══════════════════════════════════════════
+   Tim Tab — CRUD dari API
+   ═══════════════════════════════════════════ */
+
+function TimTab({ users, loading, onReload }: { users: any[]; loading: boolean; onReload: () => void }) {
+  const [showModal, setShowModal] = useState(false);
+  const [editUser, setEditUser] = useState<any>(null);
+  const [deleting, setDeleting] = useState<number | null>(null);
+
+  function handleAdd() {
+    setEditUser(null);
+    setShowModal(true);
+  }
+
+  function handleEdit(u: any) {
+    setEditUser(u);
+    setShowModal(true);
+  }
+
+  async function handleDelete(id: number) {
+    if (!confirm('Hapus anggota tim ini?')) return;
+    setDeleting(id);
+    try {
+      await api.deleteUser(id);
+      onReload();
+    } catch { }
+    setDeleting(null);
+  }
+
+  async function handleToggle(id: number) {
+    await api.toggleUser(id);
+    onReload();
+  }
+
+  function handleSaved() {
+    setShowModal(false);
+    setEditUser(null);
+    onReload();
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16 gap-3 text-muted-foreground">
+        <Loader2 className="h-5 w-5 animate-spin" />
+        <span>Memuat data tim...</span>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {showModal && (
+        <UserModal
+          user={editUser}
+          onClose={() => { setShowModal(false); setEditUser(null); }}
+          onSaved={handleSaved}
+        />
+      )}
+
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-base font-semibold">Anggota Tim</h3>
+            <p className="text-sm text-muted-foreground">{users.length} anggota terdaftar</p>
+          </div>
+          <Button size="sm" onClick={handleAdd}>
+            <Plus className="mr-2 h-4 w-4" />
+            Tambah Anggota
+          </Button>
+        </div>
+
+        <div className="space-y-3">
+          {users.map((u: any) => (
+            <Card key={u.id} className={cn(!u.aktif && 'opacity-50')}>
+              <CardContent className="py-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={cn('flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold', ROLE_BG[u.role] || 'bg-muted text-foreground')}>
+                      {u.nama.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium">{u.nama}</p>
+                        <span className={cn('inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold', ROLE_COLORS[u.role] || 'bg-muted text-foreground')}>
+                          {u.role}
+                        </span>
+                        {!u.aktif && <Badge variant="secondary">Nonaktif</Badge>}
+                      </div>
+                      <div className="flex items-center gap-3 mt-0.5">
+                        <p className="text-xs text-muted-foreground">{u.email}</p>
+                        {u.telepon && <p className="text-xs text-muted-foreground">{u.telepon}</p>}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => handleToggle(u.id)}
+                      className={cn(
+                        'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors',
+                        u.aktif ? 'bg-primary' : 'bg-muted'
+                      )}
+                    >
+                      <span className={cn(
+                        'pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-lg transition-transform',
+                        u.aktif ? 'translate-x-4' : 'translate-x-0'
+                      )} />
+                    </button>
+                    <Button variant="ghost" size="sm" onClick={() => handleEdit(u)}>
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => handleDelete(u.id)} disabled={deleting === u.id || u.role === 'Owner'}>
+                      <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   User Modal (Add / Edit)
+   ═══════════════════════════════════════════ */
+
+function UserModal({ user, onClose, onSaved }: { user: any | null; onClose: () => void; onSaved: () => void }) {
+  const isEdit = !!user;
+  const [form, setForm] = useState({
+    nama: user?.nama || '',
+    email: user?.email || '',
+    telepon: user?.telepon || '',
+    role: user?.role || 'PIC',
+  });
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  function update(key: string, value: string) {
+    setForm(f => ({ ...f, [key]: value }));
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.nama || !form.email) return;
+    setSubmitting(true);
+    setError('');
+    try {
+      if (isEdit) {
+        await api.updateUser(user.id, form);
+      } else {
+        await api.createUser(form);
+      }
+      onSaved();
+    } catch (err: any) {
+      setError(err.message || 'Gagal menyimpan');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="fixed inset-0 bg-black/50" onClick={onClose} />
+      <div className="relative z-10 w-full max-w-md rounded-xl bg-card border shadow-xl mx-4">
+        <div className="flex items-center justify-between border-b px-6 py-4">
+          <h3 className="text-lg font-semibold">{isEdit ? 'Edit Anggota' : 'Tambah Anggota Baru'}</h3>
+          <button onClick={onClose} className="rounded-lg p-2 hover:bg-accent transition-colors">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="px-6 py-4 space-y-4">
+          <div>
+            <label className="text-sm font-medium mb-1.5 block">Nama</label>
+            <Input value={form.nama} onChange={e => update('nama', e.target.value)} placeholder="Nama lengkap" required />
+          </div>
+          <div>
+            <label className="text-sm font-medium mb-1.5 block">Email</label>
+            <Input type="email" value={form.email} onChange={e => update('email', e.target.value)} placeholder="email@indohaircorp.co.id" required />
+          </div>
+          <div>
+            <label className="text-sm font-medium mb-1.5 block">Telepon</label>
+            <Input value={form.telepon} onChange={e => update('telepon', e.target.value)} placeholder="0812-xxxx-xxxx" />
+          </div>
+          <div>
+            <label className="text-sm font-medium mb-1.5 block">Role</label>
+            <Select value={form.role} onChange={e => update('role', e.target.value)}>
+              <option value="Owner">Owner</option>
+              <option value="Admin">Admin</option>
+              <option value="PIC">PIC</option>
+            </Select>
+          </div>
+          {error && <p className="text-sm text-destructive">{error}</p>}
+          <div className="flex justify-end gap-3 pt-2">
+            <Button type="button" variant="outline" onClick={onClose}>Batal</Button>
+            <Button type="submit" disabled={submitting || !form.nama || !form.email}>
+              {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              {isEdit ? 'Simpan' : 'Tambah'}
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   Other Tabs (unchanged)
+   ═══════════════════════════════════════════ */
 
 function NotifikasiTab({ notif, setNotif }: { notif: any; setNotif: (v: any) => void }) {
   function toggle(key: string) {

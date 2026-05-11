@@ -7,7 +7,7 @@ import os
 
 from .database import engine
 from .models import Base
-from .routers import overview, suppliers, purchases, payments, kas, operasional, fees, import_india, master_bahan, master_ukuran, master_warna, petani, wilayah, pic_master
+from .routers import overview, suppliers, purchases, payments, kas, operasional, fees, import_india, master_bahan, master_ukuran, master_warna, petani, wilayah, pic_master, user_team
 
 
 async def _ensure_columns(conn):
@@ -64,6 +64,7 @@ app.include_router(kas.router, prefix="/api/kas", tags=["kas"])
 app.include_router(operasional.router, prefix="/api/operasional", tags=["operasional"])
 app.include_router(fees.router, prefix="/api/fees", tags=["fees"])
 app.include_router(import_india.router, prefix="/api/import", tags=["import"])
+app.include_router(user_team.router, prefix="/api/users", tags=["users"])
 
 
 @app.get("/api/health")

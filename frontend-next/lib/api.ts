@@ -249,4 +249,27 @@ export const api = {
     if (!res.ok) throw new Error(`API ${res.status}`);
     return res.json();
   },
+
+  // Users / Tim
+  getUsers: () => fetchJSON('/users'),
+  createUser: async (data: any) => {
+    const res = await fetch(`${BASE}/users/`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+    if (!res.ok) throw new Error(`API ${res.status}`);
+    return res.json();
+  },
+  updateUser: async (id: number, data: any) => {
+    const res = await fetch(`${BASE}/users/${id}/`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+    if (!res.ok) throw new Error(`API ${res.status}`);
+    return res.json();
+  },
+  toggleUser: async (id: number) => {
+    const res = await fetch(`${BASE}/users/${id}/toggle/`, { method: 'PATCH' });
+    if (!res.ok) throw new Error(`API ${res.status}`);
+    return res.json();
+  },
+  deleteUser: async (id: number) => {
+    const res = await fetch(`${BASE}/users/${id}/`, { method: 'DELETE' });
+    if (!res.ok) throw new Error(`API ${res.status}`);
+    return res.json();
+  },
 };

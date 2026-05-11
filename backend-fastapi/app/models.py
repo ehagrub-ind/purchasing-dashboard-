@@ -59,6 +59,18 @@ class MasterPIC(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
+class UserTeam(Base):
+    __tablename__ = "user_team"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    nama: Mapped[str] = mapped_column(String)
+    email: Mapped[str] = mapped_column(String, unique=True)
+    telepon: Mapped[str] = mapped_column(String, default="")
+    role: Mapped[str] = mapped_column(String, default="PIC")
+    aktif: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
 class MasterBahan(Base):
     __tablename__ = "master_bahan"
 

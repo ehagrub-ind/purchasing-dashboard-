@@ -37,13 +37,25 @@ export default function PembelianPage() {
   const [importData, setImportData] = useState<any>(null);
   const [suppliers, setSuppliers] = useState<any[]>([]);
   const [masterBahan, setMasterBahan] = useState<any[]>([]);
+  const [masterUkuran, setMasterUkuran] = useState<any[]>([]);
+  const [masterWarna, setMasterWarna] = useState<any[]>([]);
   const [error, setError] = useState('');
   const [filters, setFilters] = useState<Record<string, any>>({ page: 1 });
   const [showPOModal, setShowPOModal] = useState(false);
 
   useEffect(() => {
-    Promise.all([api.getPurchases(filters), api.getImport(), api.getSuppliers(), api.getMasterBahan({ aktif: 'true' })])
-      .then(([local, imp, sup, mb]) => { setLocalData(local); setImportData(imp); setSuppliers(sup); setMasterBahan(mb); })
+    Promise.all([
+      api.getPurchases(filters),
+      api.getImport(),
+      api.getSuppliers(),
+      api.getMasterBahan({ aktif: 'true' }),
+      api.getUkuran({ aktif: 'true' }),
+      api.getWarna({ aktif: 'true' }),
+    ])
+      .then(([local, imp, sup, mb, uk, wr]) => {
+        setLocalData(local); setImportData(imp); setSuppliers(sup);
+        setMasterBahan(mb); setMasterUkuran(uk); setMasterWarna(wr);
+      })
       .catch((e) => setError(e.message));
   }, []);
 
@@ -84,6 +96,8 @@ export default function PembelianPage() {
         <BuatPOModal
           suppliers={suppliers}
           masterBahan={masterBahan}
+          masterUkuran={masterUkuran}
+          masterWarna={masterWarna}
           onClose={() => setShowPOModal(false)}
           onCreated={handlePOCreated}
         />
@@ -951,11 +965,12 @@ function ImportSemuaTxn({ data }: { data: any }) {
 
 const KATEGORI_OPTIONS = ['R Salon', 'Uk 6-8 / Retul', 'Remy', 'Lus', 'Brangkas', 'Lainnya'];
 const WILAYAH_OPTIONS = ['Jatim', 'Jateng', 'Jabar'];
-const UKURAN_IMPOR = Array.from({ length: 18 }, (_, i) => `${i + 10}`);
 
-function BuatPOModal({ suppliers, masterBahan, onClose, onCreated }: {
+function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, onClose, onCreated }: {
   suppliers: any[];
   masterBahan: any[];
+  masterUkuran: any[];
+  masterWarna: any[];
   onClose: () => void;
   onCreated: () => void;
 }) {
@@ -976,6 +991,7 @@ function BuatPOModal({ suppliers, masterBahan, onClose, onCreated }: {
     jenis: '',
     kategori: '',
     ukuran: '',
+    warna: '',
     qty: '',
     price: '',
     deskripsi: '',
@@ -997,7 +1013,7 @@ function BuatPOModal({ suppliers, masterBahan, onClose, onCreated }: {
   function handleJalurChange(jalur: 'Lokal' | 'Impor') {
     setForm(f => ({
       ...f, jalur, pic: '', supplierId: '', petani: '', wilayah: jalur === 'Impor' ? 'Impor' : '',
-      jenis: '', kategori: '', ukuran: '', qty: '', price: '', deskripsi: '',
+      jenis: '', kategori: '', ukuran: '', warna: '', qty: '', price: '', deskripsi: '',
     }));
     setPetaniList([]);
     setIsManualJenis(false);
@@ -1422,6 +1438,33 @@ function BuatPOModal({ suppliers, masterBahan, onClose, onCreated }: {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium mb-1.5 flex items-center gap-2">
+                      <Tag className="h-4 w-4 text-muted-foreground" />
+                      Ukuran
+                    </label>
+                    <Select value={form.ukuran} onChange={e => update('ukuran', e.target.value)}>
+                      <option value="">-- Pilih Ukuran --</option>
+                      {masterUkuran.map((u: any) => (
+                        <option key={u.id} value={u.kode_ukuran}>{u.nama_ukuran}</option>
+                      ))}
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium mb-1.5 flex items-center gap-2">
+                      <Tag className="h-4 w-4 text-muted-foreground" />
+                      Warna
+                    </label>
+                    <Select value={form.warna} onChange={e => update('warna', e.target.value)}>
+                      <option value="">-- Pilih Warna --</option>
+                      {masterWarna.map((w: any) => (
+                        <option key={w.id} value={w.kode_warna}>{w.nama_warna}</option>
+                      ))}
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium mb-1.5 flex items-center gap-2">
                       <Weight className="h-4 w-4 text-muted-foreground" />
                       Qty (Kg)
                     </label>
@@ -1462,17 +1505,31 @@ function BuatPOModal({ suppliers, masterBahan, onClose, onCreated }: {
             {/* Step 2: Detail Barang — IMPOR */}
             {step === 2 && isImpor && (
               <div className="space-y-5 px-6 py-4">
-                <div>
-                  <label className="text-sm font-medium mb-1.5 flex items-center gap-2">
-                    <Tag className="h-4 w-4 text-muted-foreground" />
-                    Ukuran Rambut (Inch)
-                  </label>
-                  <Select value={form.ukuran} onChange={e => update('ukuran', e.target.value)}>
-                    <option value="">-- Pilih Ukuran --</option>
-                    {UKURAN_IMPOR.map(u => (
-                      <option key={u} value={u}>{u}&quot;</option>
-                    ))}
-                  </Select>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium mb-1.5 flex items-center gap-2">
+                      <Tag className="h-4 w-4 text-muted-foreground" />
+                      Ukuran
+                    </label>
+                    <Select value={form.ukuran} onChange={e => update('ukuran', e.target.value)}>
+                      <option value="">-- Pilih Ukuran --</option>
+                      {masterUkuran.map((u: any) => (
+                        <option key={u.id} value={u.kode_ukuran}>{u.nama_ukuran}</option>
+                      ))}
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium mb-1.5 flex items-center gap-2">
+                      <Tag className="h-4 w-4 text-muted-foreground" />
+                      Warna
+                    </label>
+                    <Select value={form.warna} onChange={e => update('warna', e.target.value)}>
+                      <option value="">-- Pilih Warna --</option>
+                      {masterWarna.map((w: any) => (
+                        <option key={w.id} value={w.kode_warna}>{w.nama_warna}</option>
+                      ))}
+                    </Select>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">

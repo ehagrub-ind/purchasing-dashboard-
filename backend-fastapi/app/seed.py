@@ -6,7 +6,7 @@ from datetime import datetime
 
 from sqlalchemy import select, func
 from .database import engine, SessionLocal
-from .models import Base, Supplier, Purchase, Payment, Kas, Operasional, Fee, MasterBahan, MasterWilayah, MasterPIC, MasterUkuran, MasterWarna, Petani
+from .models import Base, Supplier, Purchase, Payment, Kas, Operasional, Fee, MasterBahan, MasterWilayah, MasterPIC, MasterUkuran, MasterWarna, Petani, UserTeam
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
 
@@ -44,6 +44,18 @@ async def seed():
         await conn.run_sync(Base.metadata.create_all)
 
     async with SessionLocal() as db:
+        ut_count = (await db.execute(select(func.count(UserTeam.id)))).scalar()
+        if not ut_count or ut_count == 0:
+            user_data = [
+                {"nama": "David", "email": "david@indohaircorp.co.id", "telepon": "0812-3456-7890", "role": "Owner"},
+                {"nama": "Dian", "email": "dian@indohaircorp.co.id", "telepon": "", "role": "Admin"},
+                {"nama": "Rigen", "email": "rigen@indohaircorp.co.id", "telepon": "", "role": "PIC"},
+            ]
+            for item in user_data:
+                db.add(UserTeam(**item))
+            await db.commit()
+            print(f"  Created {len(user_data)} user team entries")
+
         mb_count = (await db.execute(select(func.count(MasterBahan.id)))).scalar()
         if not mb_count or mb_count == 0:
             master_bahan_data = [
