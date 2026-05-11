@@ -1,30 +1,26 @@
 'use client';
 
+import { Bell, Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+
 export default function Topbar() {
   return (
-    <header className="topbar">
-      <div className="topbar-search">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <circle cx="11" cy="11" r="8" />
-          <line x1="21" y1="21" x2="16.65" y2="16.65" />
-        </svg>
-        <input type="text" placeholder="Search supplier, pembelian, wilayah..." />
+    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-card px-6">
+      <div className="relative w-72">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input placeholder="Cari..." className="pl-9" />
       </div>
-      <div className="topbar-actions">
-        <button className="btn btn-primary">New Purchase</button>
-        <button className="btn-text">Export</button>
-        <div className="topbar-bell">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
-            <path d="M13.73 21a2 2 0 01-3.46 0" />
-          </svg>
-          <span className="topbar-bell-badge">3</span>
-        </div>
-        <div className="topbar-user">
-          <div className="topbar-avatar">PR</div>
-          <div>
-            <div className="topbar-user-name">Pak Regen</div>
-            <div className="topbar-user-role">Administrator</div>
+      <div className="flex items-center gap-2">
+        <Button variant="ghost" size="icon" className="relative">
+          <Bell className="h-4 w-4" />
+          <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] text-destructive-foreground">3</span>
+        </Button>
+        <div className="flex items-center gap-3 ml-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">PR</div>
+          <div className="hidden sm:block">
+            <p className="text-sm font-medium">Pak Regen</p>
+            <p className="text-xs text-muted-foreground">Administrator</p>
           </div>
         </div>
       </div>

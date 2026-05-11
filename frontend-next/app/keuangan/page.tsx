@@ -1,15 +1,42 @@
 'use client';
 
-import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { Chart, registerables } from 'chart.js';
 import { api } from '@/lib/api';
 import { rupiah, rupiahFull, fmtDate } from '@/lib/format';
-import KPICard from '@/components/KPICard';
+import { cn } from '@/lib/utils';
 import Loading from '@/components/Loading';
+
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+
+import {
+  ArrowDownCircle,
+  ArrowUpCircle,
+  Wallet,
+  AlertTriangle,
+  ClipboardList,
+  TrendingDown,
+  TrendingUp,
+  Search,
+  Download,
+  Plus,
+  Info,
+  CheckCircle2,
+  XCircle,
+  CreditCard,
+  BarChart3,
+} from 'lucide-react';
 
 Chart.register(...registerables);
 
 type TabId = 'ringkasan' | 'masuk' | 'keluar' | 'aruskas' | 'incomplete';
+
+/* ─── Helper functions ─── */
 
 function detectTransactionType(row: any) {
   const d = (row.deskripsi || '').toLowerCase();
@@ -67,28 +94,38 @@ function getSuggestion(issue: string) {
   return 'Cek ulang data transaksi';
 }
 
-const TYPE_BADGE: Record<string, { cls: string; label: string }> = {
-  masuk: { cls: 'fin-badge-masuk', label: 'Masuk' },
-  keluar: { cls: 'fin-badge-keluar', label: 'Keluar' },
-  operasional: { cls: 'fin-badge-operasional', label: 'Operasional' },
-  koreksi: { cls: 'fin-badge-koreksi', label: 'Koreksi' },
-  lainnya: { cls: 'fin-badge-lainnya', label: 'Lainnya' },
+/* ─── Badge components ─── */
+
+const TYPE_BADGE_MAP: Record<string, { variant: 'success' | 'destructive' | 'info' | 'purple' | 'secondary'; label: string }> = {
+  masuk: { variant: 'success', label: 'Masuk' },
+  keluar: { variant: 'destructive', label: 'Keluar' },
+  operasional: { variant: 'info', label: 'Operasional' },
+  koreksi: { variant: 'purple', label: 'Koreksi' },
+  lainnya: { variant: 'secondary', label: 'Lainnya' },
 };
 
 function TypeBadge({ type }: { type: string }) {
-  const m = TYPE_BADGE[type] || TYPE_BADGE.lainnya;
-  return <span className={`fin-badge ${m.cls}`}>{m.label}</span>;
+  const m = TYPE_BADGE_MAP[type] || TYPE_BADGE_MAP.lainnya;
+  return <Badge variant={m.variant}>{m.label}</Badge>;
 }
 
 function StatusBadge({ row }: { row: any }) {
   const issues = detectIssues(row);
-  if (issues.length === 0) return <span className="fin-badge fin-badge-masuk">Lengkap</span>;
-  return <span className="fin-badge fin-badge-warning">Perlu Dicek</span>;
+  if (issues.length === 0) return <Badge variant="success">Lengkap</Badge>;
+  return <Badge variant="warning">Perlu Dicek</Badge>;
 }
 
 function WilayahBadge({ w }: { w: string }) {
-  return <span className={`badge supplier-wilayah wilayah-${(w || '').toLowerCase()}`}>{w}</span>;
+  const variant = (w || '').toLowerCase() as 'jabar' | 'jateng' | 'jatim';
+  const knownVariants = ['jabar', 'jateng', 'jatim'];
+  return (
+    <Badge variant={knownVariants.includes(variant) ? variant : 'secondary'}>
+      {w}
+    </Badge>
+  );
 }
+
+/* ─── Main page ─── */
 
 export default function KeuanganPage() {
   const [kasData, setKasData] = useState<any[]>([]);
@@ -128,16 +165,21 @@ export default function KeuanganPage() {
     return { masuk, keluar, saldo: masuk - keluar };
   }, [kasSummary]);
 
-  if (error) return <div className="loading">Error: {error}</div>;
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Card className="max-w-md">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3 text-destructive">
+              <XCircle className="h-5 w-5" />
+              <span className="font-medium">Error: {error}</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
   if (loading) return <Loading />;
-
-  const tabs: { id: TabId; label: string }[] = [
-    { id: 'ringkasan', label: 'Ringkasan' },
-    { id: 'masuk', label: 'Uang Masuk' },
-    { id: 'keluar', label: 'Uang Keluar' },
-    { id: 'aruskas', label: 'Arus Kas' },
-    { id: 'incomplete', label: 'Belum Lengkap' },
-  ];
 
   const pills = [
     { label: 'Semua', value: '' },
@@ -149,64 +191,214 @@ export default function KeuanganPage() {
   ];
 
   return (
-    <>
-      <div className="page-header">
-        <div className="page-header-left">
-          <h2 className="page-title">Keuangan</h2>
-          <p className="page-subtitle">Pantau arus kas masuk, kas keluar, saldo wilayah, dan transaksi yang belum lengkap.</p>
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">Keuangan</h2>
+          <p className="text-muted-foreground mt-1">
+            Pantau arus kas masuk, kas keluar, saldo wilayah, dan transaksi yang belum lengkap.
+          </p>
         </div>
-        <div className="page-header-actions">
-          <button className="btn btn-primary">+ Input Uang Masuk</button>
-          <button className="btn">+ Input Pengeluaran</button>
-          <button className="btn">Export</button>
+        <div className="flex items-center gap-2">
+          <Button>
+            <Plus className="mr-2 h-4 w-4" />
+            Input Uang Masuk
+          </Button>
+          <Button variant="outline">
+            <Plus className="mr-2 h-4 w-4" />
+            Input Pengeluaran
+          </Button>
+          <Button variant="outline">
+            <Download className="mr-2 h-4 w-4" />
+            Export
+          </Button>
         </div>
       </div>
 
+      {/* Warning Banner */}
       {incompleteCount > 0 && (
-        <div className="fin-banner fin-banner-warning">
-          <span className="fin-banner-icon">!</span>
-          <span>Jika saldo wilayah minus, cek tab Uang Masuk dan Belum Lengkap terlebih dahulu. </span>
-          <strong>{incompleteCount} transaksi perlu dicek.</strong>
-        </div>
+        <Card className="border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30">
+          <CardContent className="flex items-start gap-3 py-4">
+            <div className="rounded-full bg-amber-100 p-2 dark:bg-amber-900/50">
+              <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            </div>
+            <div className="text-sm">
+              <span className="text-amber-800 dark:text-amber-200">
+                Jika saldo wilayah minus, cek tab Uang Masuk dan Belum Lengkap terlebih dahulu.{' '}
+              </span>
+              <strong className="text-amber-900 dark:text-amber-100">
+                {incompleteCount} transaksi perlu dicek.
+              </strong>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
-      <div className="kpi-row">
-        <KPICard label="Total Uang Masuk" value={rupiah(totals.masuk)} sub="Diperbarui baru saja" color="green" />
-        <KPICard label="Total Uang Keluar" value={rupiah(totals.keluar)} sub="Diperbarui baru saja" color="pink" />
-        <KPICard label="Saldo Akhir" value={rupiah(totals.saldo)} sub={totals.saldo < 0 ? 'Minus' : 'Positif'} color={totals.saldo >= 0 ? 'green' : 'pink'} />
-        <KPICard label="Selisih Belum Jelas" value={rupiah(Math.abs(totals.saldo))} sub="Review" color="orange" />
-        <KPICard label="Transaksi Belum Lengkap" value={String(incompleteCount)} sub={incompleteCount > 0 ? 'Perlu Cek' : 'Aman'} color={incompleteCount > 0 ? 'orange' : 'green'} />
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-emerald-100 p-2.5 dark:bg-emerald-900/50">
+                <ArrowDownCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm text-muted-foreground truncate">Total Uang Masuk</p>
+                <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400 truncate">{rupiah(totals.masuk)}</p>
+                <p className="text-xs text-muted-foreground">Diperbarui baru saja</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-pink-100 p-2.5 dark:bg-pink-900/50">
+                <ArrowUpCircle className="h-5 w-5 text-pink-600 dark:text-pink-400" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm text-muted-foreground truncate">Total Uang Keluar</p>
+                <p className="text-xl font-bold text-pink-600 dark:text-pink-400 truncate">{rupiah(totals.keluar)}</p>
+                <p className="text-xs text-muted-foreground">Diperbarui baru saja</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <div className={cn(
+                "rounded-lg p-2.5",
+                totals.saldo >= 0
+                  ? "bg-emerald-100 dark:bg-emerald-900/50"
+                  : "bg-pink-100 dark:bg-pink-900/50"
+              )}>
+                <Wallet className={cn(
+                  "h-5 w-5",
+                  totals.saldo >= 0
+                    ? "text-emerald-600 dark:text-emerald-400"
+                    : "text-pink-600 dark:text-pink-400"
+                )} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm text-muted-foreground truncate">Saldo Akhir</p>
+                <p className={cn(
+                  "text-xl font-bold truncate",
+                  totals.saldo >= 0
+                    ? "text-emerald-600 dark:text-emerald-400"
+                    : "text-pink-600 dark:text-pink-400"
+                )}>{rupiah(totals.saldo)}</p>
+                <p className="text-xs text-muted-foreground">
+                  {totals.saldo < 0 ? 'Minus' : 'Positif'}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-amber-100 p-2.5 dark:bg-amber-900/50">
+                <TrendingDown className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm text-muted-foreground truncate">Selisih Belum Jelas</p>
+                <p className="text-xl font-bold text-amber-600 dark:text-amber-400 truncate">{rupiah(Math.abs(totals.saldo))}</p>
+                <p className="text-xs text-muted-foreground">Review</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <div className={cn(
+                "rounded-lg p-2.5",
+                incompleteCount > 0
+                  ? "bg-amber-100 dark:bg-amber-900/50"
+                  : "bg-emerald-100 dark:bg-emerald-900/50"
+              )}>
+                <ClipboardList className={cn(
+                  "h-5 w-5",
+                  incompleteCount > 0
+                    ? "text-amber-600 dark:text-amber-400"
+                    : "text-emerald-600 dark:text-emerald-400"
+                )} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm text-muted-foreground truncate">Transaksi Belum Lengkap</p>
+                <p className={cn(
+                  "text-xl font-bold truncate",
+                  incompleteCount > 0
+                    ? "text-amber-600 dark:text-amber-400"
+                    : "text-emerald-600 dark:text-emerald-400"
+                )}>{incompleteCount}</p>
+                <p className="text-xs text-muted-foreground">
+                  {incompleteCount > 0 ? 'Perlu Cek' : 'Aman'}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      <div className="fin-quick-filter">
+      {/* Quick Filter Pills */}
+      <div className="flex flex-wrap items-center gap-2">
         {pills.map(p => (
-          <button key={p.value} className={`fin-pill ${globalWilayah === p.value ? 'active' : ''}`} onClick={() => setGlobalWilayah(p.value)}>
+          <Button
+            key={p.value}
+            variant={globalWilayah === p.value ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setGlobalWilayah(p.value)}
+          >
             {p.label}
-          </button>
+          </Button>
         ))}
       </div>
 
-      <div className="fin-tabs">
-        {tabs.map(t => (
-          <button key={t.id} className={`fin-tab ${activeTab === t.id ? 'active' : ''}`} onClick={() => setActiveTab(t.id)}>
-            {t.label}
-            {t.id === 'incomplete' && incompleteCount > 0 && (
-              <> <span className="fin-tab-count">{incompleteCount}</span></>
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TabId)}>
+        <TabsList className="w-full justify-start">
+          <TabsTrigger value="ringkasan">Ringkasan</TabsTrigger>
+          <TabsTrigger value="masuk">Uang Masuk</TabsTrigger>
+          <TabsTrigger value="keluar">Uang Keluar</TabsTrigger>
+          <TabsTrigger value="aruskas">Arus Kas</TabsTrigger>
+          <TabsTrigger value="incomplete" className="gap-2">
+            Belum Lengkap
+            {incompleteCount > 0 && (
+              <Badge variant="destructive" className="ml-1 h-5 min-w-5 px-1.5 text-[10px]">
+                {incompleteCount}
+              </Badge>
             )}
-          </button>
-        ))}
-      </div>
+          </TabsTrigger>
+        </TabsList>
 
-      <div className="fin-tab-content">
-        {activeTab === 'ringkasan' && <RingkasanTab kasSummary={kasSummary} kasData={kasData} opData={opData} opSummary={opSummary} rows={filteredKas} />}
-        {activeTab === 'masuk' && <MasukTab rows={filteredKas} />}
-        {activeTab === 'keluar' && <KeluarTab rows={filteredKas} />}
-        {activeTab === 'aruskas' && <ArusKasTab rows={filteredKas} />}
-        {activeTab === 'incomplete' && <IncompleteTab kasData={kasData} globalWilayah={globalWilayah} />}
-      </div>
-    </>
+        <TabsContent value="ringkasan">
+          <RingkasanTab kasSummary={kasSummary} kasData={kasData} opData={opData} opSummary={opSummary} rows={filteredKas} />
+        </TabsContent>
+        <TabsContent value="masuk">
+          <MasukTab rows={filteredKas} />
+        </TabsContent>
+        <TabsContent value="keluar">
+          <KeluarTab rows={filteredKas} />
+        </TabsContent>
+        <TabsContent value="aruskas">
+          <ArusKasTab rows={filteredKas} />
+        </TabsContent>
+        <TabsContent value="incomplete">
+          <IncompleteTab kasData={kasData} globalWilayah={globalWilayah} />
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 }
+
+/* ─── Tab: Ringkasan ─── */
 
 function RingkasanTab({ kasSummary, kasData, opData, opSummary, rows }: any) {
   const chartRef = useRef<Chart | null>(null);
@@ -220,8 +412,20 @@ function RingkasanTab({ kasSummary, kasData, opData, opSummary, rows }: any) {
       data: {
         labels: kasSummary.map((s: any) => s.wilayah),
         datasets: [
-          { label: 'Masuk', data: kasSummary.map((s: any) => Number(s.total_masuk)), backgroundColor: '#10B981', borderRadius: 8, borderSkipped: false },
-          { label: 'Keluar', data: kasSummary.map((s: any) => Number(s.total_keluar)), backgroundColor: '#EF4444', borderRadius: 8, borderSkipped: false },
+          {
+            label: 'Masuk',
+            data: kasSummary.map((s: any) => Number(s.total_masuk)),
+            backgroundColor: '#10B981',
+            borderRadius: 8,
+            borderSkipped: false,
+          },
+          {
+            label: 'Keluar',
+            data: kasSummary.map((s: any) => Number(s.total_keluar)),
+            backgroundColor: '#EF4444',
+            borderRadius: 8,
+            borderSkipped: false,
+          },
         ],
       },
       options: {
@@ -250,113 +454,171 @@ function RingkasanTab({ kasSummary, kasData, opData, opSummary, rows }: any) {
   const mostInc = Object.entries(incByWilayah).sort((a, b) => b[1] - a[1])[0];
 
   return (
-    <>
-      <div className="stat-grid fin-wilayah-grid">
+    <div className="space-y-6">
+      {/* Kas per Wilayah Cards */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {kasSummary.map((s: any) => {
           const saldo = Number(s.saldo);
-          const color = saldo >= 0 ? 'green' : 'red';
+          const isPositive = saldo >= 0;
           return (
-            <div key={s.wilayah} className="stat-card">
-              <div className="stat-card-row">
-                <div className={`stat-icon ${color}`}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="1" y="4" width="22" height="16" rx="2" />
-                    <line x1="1" y1="10" x2="23" y2="10" />
-                  </svg>
+            <Card key={s.wilayah}>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-4">
+                  <div className={cn(
+                    "rounded-lg p-3",
+                    isPositive
+                      ? "bg-emerald-100 dark:bg-emerald-900/50"
+                      : "bg-red-100 dark:bg-red-900/50"
+                  )}>
+                    <CreditCard className={cn(
+                      "h-5 w-5",
+                      isPositive
+                        ? "text-emerald-600 dark:text-emerald-400"
+                        : "text-red-600 dark:text-red-400"
+                    )} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      Kas <WilayahBadge w={s.wilayah} />
+                    </div>
+                    <p className={cn(
+                      "text-xl font-bold mt-1",
+                      isPositive
+                        ? "text-emerald-600 dark:text-emerald-400"
+                        : "text-red-600 dark:text-red-400"
+                    )}>
+                      {rupiah(saldo)}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Masuk: {rupiah(s.total_masuk)} | Keluar: {rupiah(s.total_keluar)}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <div className="stat-label">Kas <WilayahBadge w={s.wilayah} /></div>
-                  <div className={`stat-value ${color}`}>{rupiah(saldo)}</div>
-                  <div className="stat-sub">Masuk: {rupiah(s.total_masuk)} | Keluar: {rupiah(s.total_keluar)}</div>
-                </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           );
         })}
       </div>
 
-      <div className="chart-card">
-        <div className="chart-title">Arus Kas per Wilayah: Masuk vs Keluar</div>
-        <canvas id="chart-kas-wilayah" />
+      {/* Chart */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <BarChart3 className="h-5 w-5 text-muted-foreground" />
+            Arus Kas per Wilayah: Masuk vs Keluar
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <canvas id="chart-kas-wilayah" />
+        </CardContent>
+      </Card>
+
+      {/* Insight Cards */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="rounded-lg bg-red-100 p-3 dark:bg-red-900/50">
+                <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Wilayah Paling Minus</p>
+                <p className="text-lg font-bold text-red-600 dark:text-red-400">
+                  {mostMinus?.wilayah || '-'}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {mostMinus ? `Saldo: ${rupiah(mostMinus.saldo)}` : '-'}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="rounded-lg bg-emerald-100 p-3 dark:bg-emerald-900/50">
+                <TrendingUp className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Pemasukan Terbesar</p>
+                <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
+                  {mostMasuk?.wilayah || '-'}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {mostMasuk ? `Total: ${rupiah(mostMasuk.total_masuk)}` : '-'}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="rounded-lg bg-amber-100 p-3 dark:bg-amber-900/50">
+                <ClipboardList className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Belum Lengkap Terbanyak</p>
+                <p className="text-lg font-bold">
+                  {mostInc ? mostInc[0] : 'Tidak ada'}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {mostInc ? `${mostInc[1]} transaksi perlu dicek` : 'Semua lengkap'}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      <div className="fin-insight-grid">
-        <div className="fin-insight-card">
-          <div className="fin-insight-icon red">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-              <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
-            </svg>
+      {/* Info Banner */}
+      <Card className="border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/30">
+        <CardContent className="flex items-start gap-3 py-4">
+          <div className="rounded-full bg-blue-100 p-2 dark:bg-blue-900/50">
+            <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
           </div>
-          <div>
-            <div className="fin-insight-label">Wilayah Paling Minus</div>
-            <div className="fin-insight-value red">{mostMinus?.wilayah || '-'}</div>
-            <div className="fin-insight-sub">{mostMinus ? `Saldo: ${rupiah(mostMinus.saldo)}` : '-'}</div>
+          <div className="text-sm text-blue-800 dark:text-blue-200">
+            <strong>Banyak uang masuk belum diinput. </strong>
+            <span>Saldo minus bisa terjadi karena pemasukan belum dicatat. </span>
+            <span>Saat ini: {masukCount} transaksi masuk vs {keluarCount} transaksi keluar.</span>
           </div>
-        </div>
-        <div className="fin-insight-card">
-          <div className="fin-insight-icon green">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="12" y1="5" x2="12" y2="19" /><polyline points="19,12 12,19 5,12" />
-            </svg>
-          </div>
-          <div>
-            <div className="fin-insight-label">Pemasukan Terbesar</div>
-            <div className="fin-insight-value green">{mostMasuk?.wilayah || '-'}</div>
-            <div className="fin-insight-sub">{mostMasuk ? `Total: ${rupiah(mostMasuk.total_masuk)}` : '-'}</div>
-          </div>
-        </div>
-        <div className="fin-insight-card">
-          <div className="fin-insight-icon orange">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2" />
-              <rect x="8" y="2" width="8" height="4" rx="1" />
-            </svg>
-          </div>
-          <div>
-            <div className="fin-insight-label">Belum Lengkap Terbanyak</div>
-            <div className="fin-insight-value">{mostInc ? mostInc[0] : 'Tidak ada'}</div>
-            <div className="fin-insight-sub">{mostInc ? `${mostInc[1]} transaksi perlu dicek` : 'Semua lengkap'}</div>
-          </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      <div className="fin-banner fin-banner-info">
-        <span className="fin-banner-icon">i</span>
-        <div>
-          <strong>Banyak uang masuk belum diinput. </strong>
-          <span>Saldo minus bisa terjadi karena pemasukan belum dicatat. </span>
-          <span>Saat ini: {masukCount} transaksi masuk vs {keluarCount} transaksi keluar.</span>
-        </div>
-      </div>
-
-      <div className="section-card">
-        <div className="section-card-header">
-          <div>
-            <div className="section-card-title">Biaya Operasional</div>
-            <div className="section-card-sub">Total: {rupiah(totalOp)} ({opData.length} transaksi)</div>
-          </div>
-        </div>
-        <div className="table-scroll">
-          <table>
-            <thead>
-              <tr><th>Wilayah</th><th>Keterangan</th><th className="num-right">Jumlah</th></tr>
-            </thead>
-            <tbody>
+      {/* Biaya Operasional Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Biaya Operasional</CardTitle>
+          <CardDescription>Total: {rupiah(totalOp)} ({opData.length} transaksi)</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Wilayah</TableHead>
+                <TableHead>Keterangan</TableHead>
+                <TableHead className="text-right">Jumlah</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {opData.map((o: any, i: number) => (
-                <tr key={i}>
-                  <td><WilayahBadge w={o.wilayah} /></td>
-                  <td>{o.deskripsi}</td>
-                  <td className="num-right">{rupiahFull(o.jumlah)}</td>
-                </tr>
+                <TableRow key={i}>
+                  <TableCell><WilayahBadge w={o.wilayah} /></TableCell>
+                  <TableCell>{o.deskripsi}</TableCell>
+                  <TableCell className="text-right font-medium">{rupiahFull(o.jumlah)}</TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </>
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
+
+/* ─── Tab: Uang Masuk ─── */
 
 function MasukTab({ rows }: { rows: any[] }) {
   const [search, setSearch] = useState('');
@@ -367,40 +629,60 @@ function MasukTab({ rows }: { rows: any[] }) {
   }, [rows, search]);
 
   return (
-    <>
-      <div className="supplier-toolbar">
-        <input className="search-input" type="text" placeholder="Cari transaksi masuk..." value={search} onChange={e => setSearch(e.target.value)} />
-      </div>
-      <div className="table-card">
-        <div className="table-header">
-          <div className="table-title">Uang Masuk ({masukRows.length} transaksi)</div>
-        </div>
-        <div className="table-scroll" style={{ maxHeight: '70vh' }}>
-          <table>
-            <thead>
-              <tr>
-                <th>Tanggal</th><th>Wilayah</th><th>Sumber Dana</th>
-                <th>Keterangan</th><th className="num-right">Nominal Masuk</th><th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {masukRows.map((r: any, i: number) => (
-                <tr key={i}>
-                  <td>{fmtDate(r.date)}</td>
-                  <td><WilayahBadge w={r.wilayah} /></td>
-                  <td>{detectSource(r)}</td>
-                  <td>{r.deskripsi}</td>
-                  <td className="num-right"><span className="fin-amount-in">{rupiahFull(r.masuk)}</span></td>
-                  <td><StatusBadge row={r} /></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+    <div className="space-y-4">
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder="Cari transaksi masuk..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="pl-9"
+          />
         </div>
       </div>
-    </>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Uang Masuk ({masukRows.length} transaksi)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="max-h-[70vh] overflow-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Tanggal</TableHead>
+                  <TableHead>Wilayah</TableHead>
+                  <TableHead>Sumber Dana</TableHead>
+                  <TableHead>Keterangan</TableHead>
+                  <TableHead className="text-right">Nominal Masuk</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {masukRows.map((r: any, i: number) => (
+                  <TableRow key={i}>
+                    <TableCell className="whitespace-nowrap">{fmtDate(r.date)}</TableCell>
+                    <TableCell><WilayahBadge w={r.wilayah} /></TableCell>
+                    <TableCell>{detectSource(r)}</TableCell>
+                    <TableCell>{r.deskripsi}</TableCell>
+                    <TableCell className="text-right font-medium text-emerald-600 dark:text-emerald-400">
+                      {rupiahFull(r.masuk)}
+                    </TableCell>
+                    <TableCell><StatusBadge row={r} /></TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
+
+/* ─── Tab: Uang Keluar ─── */
 
 function KeluarTab({ rows }: { rows: any[] }) {
   const [search, setSearch] = useState('');
@@ -411,85 +693,125 @@ function KeluarTab({ rows }: { rows: any[] }) {
   }, [rows, search]);
 
   return (
-    <>
-      <div className="supplier-toolbar">
-        <input className="search-input" type="text" placeholder="Cari transaksi keluar..." value={search} onChange={e => setSearch(e.target.value)} />
-      </div>
-      <div className="table-card">
-        <div className="table-header">
-          <div className="table-title">Uang Keluar ({keluarRows.length} transaksi)</div>
-        </div>
-        <div className="table-scroll" style={{ maxHeight: '70vh' }}>
-          <table>
-            <thead>
-              <tr>
-                <th>Tanggal</th><th>Wilayah</th><th>Supplier/Tujuan</th>
-                <th>Keterangan</th><th className="num-right">Nominal Keluar</th><th>Kategori</th><th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {keluarRows.map((r: any, i: number) => (
-                <tr key={i}>
-                  <td>{fmtDate(r.date)}</td>
-                  <td><WilayahBadge w={r.wilayah} /></td>
-                  <td>{detectSupplierTarget(r)}</td>
-                  <td>{r.deskripsi}</td>
-                  <td className="num-right"><span className="fin-amount-out">{rupiahFull(r.keluar)}</span></td>
-                  <td>{detectCategory(r)}</td>
-                  <td><StatusBadge row={r} /></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+    <div className="space-y-4">
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder="Cari transaksi keluar..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="pl-9"
+          />
         </div>
       </div>
-    </>
-  );
-}
 
-function ArusKasTab({ rows }: { rows: any[] }) {
-  return (
-    <div className="table-card">
-      <div className="table-header">
-        <div className="table-title">Arus Kas ({rows.length} entri)</div>
-      </div>
-      <div className="table-scroll" style={{ maxHeight: '70vh' }}>
-        <table>
-          <thead>
-            <tr>
-              <th>Tanggal</th><th>Wilayah</th><th>Keterangan</th>
-              <th className="num-right">Masuk</th><th className="num-right">Keluar</th>
-              <th className="num-right">Saldo</th><th>Tipe</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r: any, i: number) => {
-              const tipe = detectTransactionType(r);
-              const saldoVal = Number(r.balance);
-              return (
-                <tr key={i}>
-                  <td>{fmtDate(r.date)}</td>
-                  <td><WilayahBadge w={r.wilayah} /></td>
-                  <td>{r.deskripsi}</td>
-                  <td className="num-right">
-                    {r.masuk > 0 ? <span className="fin-amount-in">{rupiahFull(r.masuk)}</span> : <span className="fin-amount-dim">-</span>}
-                  </td>
-                  <td className="num-right">
-                    {r.keluar > 0 ? <span className="fin-amount-out">{rupiahFull(r.keluar)}</span> : <span className="fin-amount-dim">-</span>}
-                  </td>
-                  <td className="num-right">
-                    <span className={saldoVal < 0 ? 'fin-amount-out' : ''}>{rupiahFull(r.balance)}</span>
-                  </td>
-                  <td><TypeBadge type={tipe} /></td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Uang Keluar ({keluarRows.length} transaksi)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="max-h-[70vh] overflow-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Tanggal</TableHead>
+                  <TableHead>Wilayah</TableHead>
+                  <TableHead>Supplier/Tujuan</TableHead>
+                  <TableHead>Keterangan</TableHead>
+                  <TableHead className="text-right">Nominal Keluar</TableHead>
+                  <TableHead>Kategori</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {keluarRows.map((r: any, i: number) => (
+                  <TableRow key={i}>
+                    <TableCell className="whitespace-nowrap">{fmtDate(r.date)}</TableCell>
+                    <TableCell><WilayahBadge w={r.wilayah} /></TableCell>
+                    <TableCell>{detectSupplierTarget(r)}</TableCell>
+                    <TableCell>{r.deskripsi}</TableCell>
+                    <TableCell className="text-right font-medium text-pink-600 dark:text-pink-400">
+                      {rupiahFull(r.keluar)}
+                    </TableCell>
+                    <TableCell>{detectCategory(r)}</TableCell>
+                    <TableCell><StatusBadge row={r} /></TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
+
+/* ─── Tab: Arus Kas ─── */
+
+function ArusKasTab({ rows }: { rows: any[] }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Arus Kas ({rows.length} entri)</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="max-h-[70vh] overflow-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Tanggal</TableHead>
+                <TableHead>Wilayah</TableHead>
+                <TableHead>Keterangan</TableHead>
+                <TableHead className="text-right">Masuk</TableHead>
+                <TableHead className="text-right">Keluar</TableHead>
+                <TableHead className="text-right">Saldo</TableHead>
+                <TableHead>Tipe</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.map((r: any, i: number) => {
+                const tipe = detectTransactionType(r);
+                const saldoVal = Number(r.balance);
+                return (
+                  <TableRow key={i}>
+                    <TableCell className="whitespace-nowrap">{fmtDate(r.date)}</TableCell>
+                    <TableCell><WilayahBadge w={r.wilayah} /></TableCell>
+                    <TableCell>{r.deskripsi}</TableCell>
+                    <TableCell className="text-right">
+                      {r.masuk > 0
+                        ? <span className="font-medium text-emerald-600 dark:text-emerald-400">{rupiahFull(r.masuk)}</span>
+                        : <span className="text-muted-foreground">-</span>
+                      }
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {r.keluar > 0
+                        ? <span className="font-medium text-pink-600 dark:text-pink-400">{rupiahFull(r.keluar)}</span>
+                        : <span className="text-muted-foreground">-</span>
+                      }
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <span className={cn(
+                        "font-medium",
+                        saldoVal < 0 ? "text-red-600 dark:text-red-400" : ""
+                      )}>
+                        {rupiahFull(r.balance)}
+                      </span>
+                    </TableCell>
+                    <TableCell><TypeBadge type={tipe} /></TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+/* ─── Tab: Belum Lengkap ─── */
 
 function IncompleteTab({ kasData, globalWilayah }: { kasData: any[]; globalWilayah: string }) {
   const issues = useMemo(() => {
@@ -507,40 +829,55 @@ function IncompleteTab({ kasData, globalWilayah }: { kasData: any[]; globalWilay
 
   if (issues.length === 0) {
     return (
-      <div className="supplier-empty">
-        <div className="supplier-empty-title">Semua transaksi lengkap</div>
-        <div className="supplier-empty-sub">Tidak ada transaksi yang perlu dicek saat ini.</div>
-      </div>
+      <Card>
+        <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+          <div className="rounded-full bg-emerald-100 p-4 dark:bg-emerald-900/50">
+            <CheckCircle2 className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
+          </div>
+          <h3 className="mt-4 text-lg font-semibold">Semua transaksi lengkap</h3>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Tidak ada transaksi yang perlu dicek saat ini.
+          </p>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="table-card">
-      <div className="table-header">
-        <div className="table-title">Transaksi Belum Lengkap ({issues.length})</div>
-      </div>
-      <div className="table-scroll" style={{ maxHeight: '70vh' }}>
-        <table>
-          <thead>
-            <tr>
-              <th>Tanggal</th><th>Wilayah</th><th>Masalah</th>
-              <th>Keterangan</th><th className="num-right">Nominal</th><th>Saran Perbaikan</th>
-            </tr>
-          </thead>
-          <tbody>
-            {issues.map((item, i) => (
-              <tr key={i}>
-                <td>{fmtDate(item.row.date)}</td>
-                <td><WilayahBadge w={item.row.wilayah} /></td>
-                <td><span className="fin-badge fin-badge-warning">{item.issue}</span></td>
-                <td>{item.row.deskripsi || '-'}</td>
-                <td className="num-right">{rupiahFull(item.row.masuk > 0 ? item.row.masuk : item.row.keluar)}</td>
-                <td>{item.suggestion}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Transaksi Belum Lengkap ({issues.length})</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="max-h-[70vh] overflow-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Tanggal</TableHead>
+                <TableHead>Wilayah</TableHead>
+                <TableHead>Masalah</TableHead>
+                <TableHead>Keterangan</TableHead>
+                <TableHead className="text-right">Nominal</TableHead>
+                <TableHead>Saran Perbaikan</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {issues.map((item, i) => (
+                <TableRow key={i}>
+                  <TableCell className="whitespace-nowrap">{fmtDate(item.row.date)}</TableCell>
+                  <TableCell><WilayahBadge w={item.row.wilayah} /></TableCell>
+                  <TableCell><Badge variant="warning">{item.issue}</Badge></TableCell>
+                  <TableCell>{item.row.deskripsi || '-'}</TableCell>
+                  <TableCell className="text-right font-medium">
+                    {rupiahFull(item.row.masuk > 0 ? item.row.masuk : item.row.keluar)}
+                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{item.suggestion}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

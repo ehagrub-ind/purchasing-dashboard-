@@ -4,8 +4,11 @@ import { useEffect, useState, useRef } from 'react';
 import { Chart, registerables } from 'chart.js';
 import { api } from '@/lib/api';
 import { rupiah, rupiahFull, kg } from '@/lib/format';
+import { cn } from '@/lib/utils';
 import Loading from '@/components/Loading';
-import DataTable from '@/components/DataTable';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
+import { Scale, TrendingUp, Banknote, Users } from 'lucide-react';
 
 Chart.register(...registerables);
 
@@ -40,6 +43,7 @@ export default function FeeReportPage() {
       },
       options: {
         responsive: true,
+        maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: {
           x: { ticks: { color: '#64748B' }, grid: { display: false } },
@@ -49,7 +53,7 @@ export default function FeeReportPage() {
     });
   }, [data]);
 
-  if (error) return <div className="loading">Error: {error}</div>;
+  if (error) return <div className="flex items-center justify-center p-12 text-red-500">Error: {error}</div>;
   if (!data) return <Loading />;
 
   let totalKg = 0;
@@ -59,55 +63,88 @@ export default function FeeReportPage() {
     totalFee += Number(f.total);
   }
 
+  const stats = [
+    { label: 'Total Qty Fee', value: kg(totalKg), icon: Scale, color: 'text-blue-600 bg-blue-50' },
+    { label: 'Total Nominal Fee', value: rupiah(totalFee), icon: Banknote, color: 'text-violet-600 bg-violet-50' },
+    { label: 'Fee Rate', value: 'Rp 50.000/kg', icon: TrendingUp, color: 'text-emerald-600 bg-emerald-50' },
+    { label: 'Partai Aktif', value: `${data.data.length} partai`, icon: Users, color: 'text-blue-600 bg-blue-50' },
+  ];
+
   return (
-    <>
-      <h2 className="page-title">Fee Pak Regen</h2>
-      <div className="stat-sub" style={{ marginBottom: 20 }}>
-        Fee Rp 50.000/kg untuk bahan Brangkas &amp; Retul 9up
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight">Fee Pak Regen</h2>
+        <p className="text-sm text-muted-foreground mt-1">
+          Fee Rp 50.000/kg untuk bahan Brangkas &amp; Retul 9up
+        </p>
       </div>
 
-      <div className="stat-grid">
-        <div className="stat-card">
-          <div className="stat-label">Total Qty Fee</div>
-          <div className="stat-value blue">{kg(totalKg)}</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">Total Nominal Fee</div>
-          <div className="stat-value purple">{rupiah(totalFee)}</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">Fee Rate</div>
-          <div className="stat-value green">Rp 50.000/kg</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">Partai Aktif</div>
-          <div className="stat-value blue">{data.data.length} partai</div>
-        </div>
+      {/* Stat Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {stats.map((s) => (
+          <Card key={s.label}>
+            <CardContent className="p-5">
+              <div className="flex items-center gap-4">
+                <div className={cn('flex items-center justify-center h-10 w-10 rounded-lg', s.color)}>
+                  <s.icon className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">{s.label}</p>
+                  <p className="text-xl font-bold tracking-tight">{s.value}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
-      <div className="chart-card">
-        <div className="chart-title">Fee per Partai</div>
-        <canvas id="chart-fee" />
-      </div>
+      {/* Bar Chart */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Fee per Partai</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-72">
+            <canvas id="chart-fee" />
+          </div>
+        </CardContent>
+      </Card>
 
-      <DataTable
-        title="Detail Fee per Partai"
-        columns={[
-          { label: 'Partai' },
-          { label: 'Qty (kg)', align: 'right' },
-          { label: 'Fee/kg', align: 'right' },
-          { label: 'Total Fee', align: 'right' },
-        ]}
-        rows={[
-          ...data.by_partai.map((p: any) => [
-            `Part ${p.partai}`,
-            kg(p.total_kg),
-            'Rp 50.000',
-            rupiahFull(p.total_fee),
-          ]),
-          ['TOTAL', kg(totalKg), '-', rupiahFull(totalFee)],
-        ]}
-      />
-    </>
+      {/* Detail Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Detail Fee per Partai</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Partai</TableHead>
+                <TableHead className="text-right">Qty (kg)</TableHead>
+                <TableHead className="text-right">Fee/kg</TableHead>
+                <TableHead className="text-right">Total Fee</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {data.by_partai.map((p: any) => (
+                <TableRow key={p.partai}>
+                  <TableCell className="font-medium">Part {p.partai}</TableCell>
+                  <TableCell className="text-right">{kg(p.total_kg)}</TableCell>
+                  <TableCell className="text-right">Rp 50.000</TableCell>
+                  <TableCell className="text-right">{rupiahFull(p.total_fee)}</TableCell>
+                </TableRow>
+              ))}
+              <TableRow className="border-t-2 font-bold bg-muted/50">
+                <TableCell>TOTAL</TableCell>
+                <TableCell className="text-right">{kg(totalKg)}</TableCell>
+                <TableCell className="text-right">-</TableCell>
+                <TableCell className="text-right">{rupiahFull(totalFee)}</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

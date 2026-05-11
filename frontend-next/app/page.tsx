@@ -4,8 +4,26 @@ import { useEffect, useState, useRef } from 'react';
 import { Chart, registerables } from 'chart.js';
 import { api } from '@/lib/api';
 import { rupiah, kg, num } from '@/lib/format';
-import KPICard from '@/components/KPICard';
-import Loading from '@/components/Loading';
+import {
+  TrendingUp,
+  Users,
+  Package,
+  Wallet,
+  Coins,
+  BarChart3,
+  Loader2,
+} from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table';
+import { cn } from '@/lib/utils';
 
 Chart.register(...registerables);
 
@@ -13,6 +31,60 @@ function kgShort(val: number) {
   if (val >= 1000) return (val / 1000).toFixed(1).replace('.', ',') + 'k';
   return val.toLocaleString('id-ID', { maximumFractionDigits: 0 });
 }
+
+const wilayahBadgeVariant: Record<string, 'jatim' | 'jateng' | 'jabar' | 'info'> = {
+  jatim: 'jatim',
+  jateng: 'jateng',
+  jabar: 'jabar',
+};
+
+const kpiCards = [
+  {
+    key: 'total_transaksi',
+    label: 'Total Transaksi',
+    icon: TrendingUp,
+    sub: 'Diperbarui baru saja',
+    iconBg: 'bg-blue-100 text-blue-600',
+    accentBorder: 'border-l-blue-500',
+    format: (s: any) => num(s.total_transaksi),
+  },
+  {
+    key: 'total_supplier',
+    label: 'Active Supplier',
+    icon: Users,
+    sub: 'Diperbarui baru saja',
+    iconBg: 'bg-orange-100 text-orange-600',
+    accentBorder: 'border-l-orange-500',
+    format: (s: any) => String(s.total_supplier),
+  },
+  {
+    key: 'total_kg',
+    label: 'Total Pembelian',
+    icon: Package,
+    sub: '3 Wilayah',
+    iconBg: 'bg-emerald-100 text-emerald-600',
+    accentBorder: 'border-l-emerald-500',
+    format: (s: any) => kgShort(s.total_kg),
+  },
+  {
+    key: 'total_nilai',
+    label: 'Total Nilai',
+    icon: Wallet,
+    sub: 'Diperbarui baru saja',
+    iconBg: 'bg-violet-100 text-violet-600',
+    accentBorder: 'border-l-violet-500',
+    format: (s: any) => rupiah(s.total_nilai).replace('Rp ', ''),
+  },
+  {
+    key: 'total_fee',
+    label: 'Total Fee',
+    icon: Coins,
+    sub: '7 Partai',
+    iconBg: 'bg-pink-100 text-pink-600',
+    accentBorder: 'border-l-pink-500',
+    format: (s: any) => rupiah(s.total_fee).replace('Rp ', ''),
+  },
+];
 
 export default function OverviewPage() {
   const [data, setData] = useState<any>(null);
@@ -42,18 +114,41 @@ export default function OverviewPage() {
       type: 'doughnut',
       data: {
         labels: data.by_wilayah.map((x: any) => x.wilayah),
-        datasets: [{ data: data.by_wilayah.map((x: any) => Number(x.total_kg)), backgroundColor: colors, borderWidth: 0 }],
+        datasets: [
+          {
+            data: data.by_wilayah.map((x: any) => Number(x.total_kg)),
+            backgroundColor: colors,
+            borderWidth: 0,
+          },
+        ],
       },
-      options: { responsive: true, plugins: { legend: { position: 'bottom' } } },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom', labels: { padding: 16, usePointStyle: true } } },
+      },
     });
 
     chartsRef.current.kategori = new Chart(k, {
       type: 'bar',
       data: {
         labels: data.by_kategori.map((x: any) => x.kategori),
-        datasets: [{ label: 'Kg', data: data.by_kategori.map((x: any) => Number(x.total_kg)), backgroundColor: colors, borderRadius: 8, borderSkipped: false }],
+        datasets: [
+          {
+            label: 'Kg',
+            data: data.by_kategori.map((x: any) => Number(x.total_kg)),
+            backgroundColor: colors,
+            borderRadius: 8,
+            borderSkipped: false,
+          },
+        ],
       },
-      options: { responsive: true, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } } } },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { x: { grid: { display: false } } },
+      },
     });
 
     chartsRef.current.trend = new Chart(t, {
@@ -61,89 +156,196 @@ export default function OverviewPage() {
       data: {
         labels: data.monthly_trend.map((m: any) => m.bulan),
         datasets: [
-          { label: 'Total Kg', data: data.monthly_trend.map((m: any) => Number(m.total_kg)), borderColor: '#3B82F6', backgroundColor: 'rgba(59,130,246,.08)', fill: true, tension: 0.3, yAxisID: 'y' },
-          { label: 'Transaksi', data: data.monthly_trend.map((m: any) => m.transaksi), borderColor: '#10B981', borderDash: [5, 5], tension: 0.3, yAxisID: 'y1' },
+          {
+            label: 'Total Kg',
+            data: data.monthly_trend.map((m: any) => Number(m.total_kg)),
+            borderColor: '#3B82F6',
+            backgroundColor: 'rgba(59,130,246,.08)',
+            fill: true,
+            tension: 0.3,
+            yAxisID: 'y',
+          },
+          {
+            label: 'Transaksi',
+            data: data.monthly_trend.map((m: any) => m.transaksi),
+            borderColor: '#10B981',
+            borderDash: [5, 5],
+            tension: 0.3,
+            yAxisID: 'y1',
+          },
         ],
       },
       options: {
         responsive: true,
+        maintainAspectRatio: false,
         interaction: { mode: 'index' as const, intersect: false },
         scales: {
           x: { grid: { display: false } },
           y: { type: 'linear' as const, position: 'left' as const, ticks: { color: '#3B82F6' } },
-          y1: { type: 'linear' as const, position: 'right' as const, ticks: { color: '#10B981' }, grid: { drawOnChartArea: false } },
+          y1: {
+            type: 'linear' as const,
+            position: 'right' as const,
+            ticks: { color: '#10B981' },
+            grid: { drawOnChartArea: false },
+          },
         },
       },
     });
   }, [data]);
 
-  if (error) return <div className="loading">Error: {error}</div>;
-  if (!data) return <Loading />;
+  /* ---- Loading & Error states ---- */
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-destructive text-sm">Error: {error}</p>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 gap-3 text-muted-foreground">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="text-sm">Memuat data...</span>
+      </div>
+    );
+  }
 
   const s = data.summary;
 
   return (
-    <>
-      <div className="welcome-bar">
-        Welcome back, <strong>Pak Regen</strong>. Ringkasan purchasing dan aktivitas terbaru.
+    <div className="space-y-6">
+      {/* Welcome bar */}
+      <div className="rounded-lg border bg-gradient-to-r from-blue-50 to-indigo-50 px-5 py-4">
+        <p className="text-sm text-muted-foreground">
+          Welcome back, <span className="font-semibold text-foreground">Pak Regen</span>.
+          Ringkasan purchasing dan aktivitas terbaru.
+        </p>
       </div>
 
-      <div className="kpi-row">
-        <KPICard label="Total Transaksi" value={num(s.total_transaksi)} sub="Diperbarui baru saja" color="blue" />
-        <KPICard label="Active Supplier" value={String(s.total_supplier)} sub="Diperbarui baru saja" color="orange" />
-        <KPICard label="Total Pembelian" value={kgShort(s.total_kg)} sub="3 Wilayah" color="green" />
-        <KPICard label="Total Nilai" value={rupiah(s.total_nilai).replace('Rp ', '')} sub="Diperbarui baru saja" color="purple" />
-        <KPICard label="Total Fee" value={rupiah(s.total_fee).replace('Rp ', '')} sub="7 Partai" color="pink" />
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+        {kpiCards.map((kpi) => {
+          const Icon = kpi.icon;
+          return (
+            <Card key={kpi.key} className={cn('border-l-4', kpi.accentBorder)}>
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                      {kpi.label}
+                    </p>
+                    <p className="text-2xl font-bold tracking-tight">{kpi.format(s)}</p>
+                  </div>
+                  <div className={cn('flex h-10 w-10 items-center justify-center rounded-lg', kpi.iconBg)}>
+                    <Icon className="h-5 w-5" />
+                  </div>
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">{kpi.sub}</p>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
-      <div className="section-card">
-        <div className="section-card-header">
-          <div>
-            <div className="section-card-title">Purchasing Management</div>
-            <div className="section-card-sub">Kelola pembelian bahan baku di semua wilayah</div>
+      {/* Charts Section */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5 text-muted-foreground" />
+            <div>
+              <CardTitle className="text-lg">Purchasing Management</CardTitle>
+              <CardDescription>Kelola pembelian bahan baku di semua wilayah</CardDescription>
+            </div>
           </div>
-        </div>
-        <div className="chart-grid" style={{ marginBottom: 0 }}>
-          <div className="chart-card">
-            <div className="chart-title">Pembelian per Wilayah (kg)</div>
-            <canvas id="chart-wilayah" />
-          </div>
-          <div className="chart-card">
-            <div className="chart-title">Pembelian per Kategori (kg)</div>
-            <canvas id="chart-kategori" />
-          </div>
-          <div className="chart-card full">
-            <div className="chart-title">Trend Pembelian Bulanan</div>
-            <canvas id="chart-trend" />
-          </div>
-        </div>
-      </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Doughnut - Wilayah */}
+            <Card className="border shadow-none">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Pembelian per Wilayah (kg)
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[280px]">
+                  <canvas id="chart-wilayah" />
+                </div>
+              </CardContent>
+            </Card>
 
-      <div className="table-card">
-        <div className="table-header">
-          <div className="table-title">Ringkasan per Wilayah</div>
-        </div>
-        <table>
-          <thead>
-            <tr>
-              <th>Wilayah</th>
-              <th className="num-right">Transaksi</th>
-              <th className="num-right">Total Kg</th>
-              <th className="num-right">Total Nilai</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.by_wilayah.map((w: any) => (
-              <tr key={w.wilayah}>
-                <td><span className={`badge supplier-wilayah wilayah-${w.wilayah.toLowerCase()}`}>{w.wilayah}</span></td>
-                <td className="num-right">{num(w.total_transaksi)}</td>
-                <td className="num-right">{kg(w.total_kg)}</td>
-                <td className="num-right">{rupiah(w.total_nilai)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </>
+            {/* Bar - Kategori */}
+            <Card className="border shadow-none">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Pembelian per Kategori (kg)
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[280px]">
+                  <canvas id="chart-kategori" />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Line - Trend (full width) */}
+            <Card className="border shadow-none lg:col-span-2">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Trend Pembelian Bulanan
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px]">
+                  <canvas id="chart-trend" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Table - Ringkasan per Wilayah */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Ringkasan per Wilayah</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Wilayah</TableHead>
+                <TableHead className="text-right">Transaksi</TableHead>
+                <TableHead className="text-right">Total Kg</TableHead>
+                <TableHead className="text-right">Total Nilai</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {data.by_wilayah.map((w: any) => {
+                const variant =
+                  wilayahBadgeVariant[w.wilayah.toLowerCase()] ?? 'info';
+                return (
+                  <TableRow key={w.wilayah}>
+                    <TableCell>
+                      <Badge variant={variant}>{w.wilayah}</Badge>
+                    </TableCell>
+                    <TableCell className="text-right font-medium tabular-nums">
+                      {num(w.total_transaksi)}
+                    </TableCell>
+                    <TableCell className="text-right font-medium tabular-nums">
+                      {kg(w.total_kg)}
+                    </TableCell>
+                    <TableCell className="text-right font-medium tabular-nums">
+                      {rupiah(w.total_nilai)}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

@@ -12,9 +12,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="id">
       <body>
         <Sidebar />
-        <div className="main-wrapper">
+        <div className="ml-[250px] min-h-screen">
           <Topbar />
-          <main className="main" id="app-content">
+          <main className="p-6">
             {children}
           </main>
         </div>
