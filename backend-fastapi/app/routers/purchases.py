@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from ..database import get_db
-from ..models import Purchase, Supplier
+from ..models import Purchase, Supplier, Petani
 
 router = APIRouter()
 
@@ -15,6 +15,7 @@ router = APIRouter()
 async def list_purchases(
     wilayah: str | None = None,
     kategori: str | None = None,
+    jenis: str | None = None,
     supplier: int | None = None,
     page: int = Query(1, ge=1),
     limit: int = Query(50, ge=1, le=1000),
@@ -29,6 +30,9 @@ async def list_purchases(
     if kategori:
         q = q.where(Purchase.kategori == kategori)
         c = c.where(Purchase.kategori == kategori)
+    if jenis:
+        q = q.where(Purchase.jenis == jenis)
+        c = c.where(Purchase.jenis == jenis)
     if supplier:
         q = q.where(Purchase.supplier_id == supplier)
         c = c.where(Purchase.supplier_id == supplier)
@@ -43,6 +47,7 @@ async def list_purchases(
             {
                 "id": p.id, "date": p.date.isoformat(), "supplier_id": p.supplier_id,
                 "wilayah": p.wilayah, "deskripsi": p.deskripsi, "jenis": p.jenis,
+                "petani": getattr(p, "petani", "") or "",
                 "qty": p.qty, "price": p.price, "total": p.total, "kategori": p.kategori,
                 "supplier": {"name": p.supplier.name} if p.supplier else None,
             }
@@ -77,11 +82,22 @@ async def purchase_stats(db: AsyncSession = Depends(get_db)):
 async def create_purchase(body: dict, db: AsyncSession = Depends(get_db)):
     qty = float(body["qty"])
     price = float(body["price"])
+    petani_nama = (body.get("petani") or "").strip()
+    supplier_id = int(body["supplierId"])
+
+    if petani_nama:
+        existing = (await db.execute(
+            select(Petani).where(Petani.nama == petani_nama, Petani.supplier_id == supplier_id)
+        )).scalar_one_or_none()
+        if not existing:
+            db.add(Petani(nama=petani_nama, supplier_id=supplier_id, wilayah=body.get("wilayah", "")))
+
     p = Purchase(
         date=datetime.fromisoformat(body["date"]),
-        supplier_id=int(body["supplierId"]),
+        supplier_id=supplier_id,
         wilayah=body["wilayah"],
         deskripsi=body.get("deskripsi", f"{body['jenis']} {body['kategori']}"),
+        petani=petani_nama,
         jenis=body["jenis"],
         qty=qty, price=price, total=qty * price,
         kategori=body["kategori"],
@@ -92,6 +108,7 @@ async def create_purchase(body: dict, db: AsyncSession = Depends(get_db)):
     return {
         "id": p.id, "date": p.date.isoformat(), "supplier_id": p.supplier_id,
         "wilayah": p.wilayah, "deskripsi": p.deskripsi, "jenis": p.jenis,
+        "petani": p.petani or "",
         "qty": p.qty, "price": p.price, "total": p.total, "kategori": p.kategori,
         "supplier": {"name": p.supplier.name} if p.supplier else None,
     }

@@ -3,14 +3,15 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  Home, LayoutDashboard, Users, ShoppingBag, DollarSign,
-  FileText, BarChart3, Settings
+  LayoutDashboard, Users, ShoppingBag, DollarSign,
+  FileText, BarChart3, Settings, Database
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const NAV_ITEMS = [
   { href: '/', label: 'Overview', icon: LayoutDashboard },
   { href: '/supplier', label: 'Supplier', icon: Users },
+  { href: '/master-data', label: 'Master Data', icon: Database },
   { href: '/pembelian', label: 'Pembelian', icon: ShoppingBag },
   { href: '/keuangan', label: 'Keuangan', icon: DollarSign },
   { href: '/fee-report', label: 'Fee Report', icon: FileText },

@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import String, Float, Integer, DateTime, ForeignKey, Index
+from sqlalchemy import String, Float, Integer, DateTime, ForeignKey, Index, Boolean
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -13,10 +13,85 @@ class Supplier(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String, unique=True)
     wilayah: Mapped[str] = mapped_column(String)
+    pic: Mapped[str] = mapped_column(String, default="")
+    jalur: Mapped[str] = mapped_column(String, default="Lokal")
+    aktif: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     purchases: Mapped[list["Purchase"]] = relationship(back_populates="supplier")
     payments: Mapped[list["Payment"]] = relationship(back_populates="supplier")
+
+
+class Petani(Base):
+    __tablename__ = "petani"
+    __table_args__ = (Index("ix_petani_supplier_id", "supplier_id"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    nama: Mapped[str] = mapped_column(String)
+    supplier_id: Mapped[int] = mapped_column(Integer, ForeignKey("suppliers.id"))
+    wilayah: Mapped[str] = mapped_column(String, default="")
+    aktif: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    supplier: Mapped["Supplier"] = relationship()
+
+
+class MasterWilayah(Base):
+    __tablename__ = "master_wilayah"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    kode_wilayah: Mapped[str] = mapped_column(String, unique=True)
+    nama_wilayah: Mapped[str] = mapped_column(String)
+    provinsi: Mapped[str] = mapped_column(String)
+    pic: Mapped[str] = mapped_column(String, default="")
+    aktif: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class MasterPIC(Base):
+    __tablename__ = "master_pic"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    kode_pic: Mapped[str] = mapped_column(String, unique=True)
+    nama_pic: Mapped[str] = mapped_column(String)
+    telepon: Mapped[str] = mapped_column(String, default="")
+    aktif: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class MasterBahan(Base):
+    __tablename__ = "master_bahan"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    kode_bahan: Mapped[str] = mapped_column(String, unique=True)
+    nama_bahan: Mapped[str] = mapped_column(String)
+    kategori_bahan: Mapped[str] = mapped_column(String)
+    ukuran_default: Mapped[str | None] = mapped_column(String, nullable=True, default=None)
+    satuan: Mapped[str] = mapped_column(String, default="kg")
+    aktif: Mapped[bool] = mapped_column(Boolean, default=True)
+    catatan: Mapped[str | None] = mapped_column(String, nullable=True, default=None)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class MasterUkuran(Base):
+    __tablename__ = "master_ukuran"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    kode_ukuran: Mapped[str] = mapped_column(String, unique=True)
+    nama_ukuran: Mapped[str] = mapped_column(String)
+    satuan: Mapped[str] = mapped_column(String, default="inch")
+    aktif: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class MasterWarna(Base):
+    __tablename__ = "master_warna"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    kode_warna: Mapped[str] = mapped_column(String, unique=True)
+    nama_warna: Mapped[str] = mapped_column(String)
+    aktif: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
 class Purchase(Base):
@@ -33,6 +108,7 @@ class Purchase(Base):
     supplier_id: Mapped[int] = mapped_column(Integer, ForeignKey("suppliers.id"))
     wilayah: Mapped[str] = mapped_column(String)
     deskripsi: Mapped[str] = mapped_column(String, default="")
+    petani: Mapped[str] = mapped_column(String, default="")
     jenis: Mapped[str] = mapped_column(String, default="")
     qty: Mapped[float] = mapped_column(Float, default=0)
     price: Mapped[float] = mapped_column(Float, default=0)

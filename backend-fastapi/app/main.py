@@ -7,13 +7,36 @@ import os
 
 from .database import engine
 from .models import Base
-from .routers import overview, suppliers, purchases, payments, kas, operasional, fees, import_india
+from .routers import overview, suppliers, purchases, payments, kas, operasional, fees, import_india, master_bahan, master_ukuran, master_warna, petani, wilayah, pic_master
+
+
+async def _ensure_columns(conn):
+    """Add missing columns to existing tables without full migration tool."""
+    from sqlalchemy import text, inspect as sa_inspect
+    def _check(sync_conn):
+        insp = sa_inspect(sync_conn)
+        result = {}
+        for tbl in ("suppliers", "purchases", "petani", "master_bahan"):
+            result[tbl] = {c["name"] for c in insp.get_columns(tbl)} if insp.has_table(tbl) else set()
+        return result
+    existing = await conn.run_sync(_check)
+    if "pic" not in existing["suppliers"]:
+        await conn.execute(text("ALTER TABLE suppliers ADD COLUMN pic VARCHAR DEFAULT ''"))
+    if "jalur" not in existing["suppliers"]:
+        await conn.execute(text("ALTER TABLE suppliers ADD COLUMN jalur VARCHAR DEFAULT 'Lokal'"))
+    if "aktif" not in existing["suppliers"]:
+        await conn.execute(text("ALTER TABLE suppliers ADD COLUMN aktif BOOLEAN DEFAULT TRUE"))
+    if "petani" not in existing["purchases"]:
+        await conn.execute(text("ALTER TABLE purchases ADD COLUMN petani VARCHAR DEFAULT ''"))
+    if existing["petani"] and "aktif" not in existing["petani"]:
+        await conn.execute(text("ALTER TABLE petani ADD COLUMN aktif BOOLEAN DEFAULT TRUE"))
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        await _ensure_columns(conn)
     yield
     await engine.dispose()
 
@@ -29,6 +52,12 @@ app.add_middleware(
 
 app.include_router(overview.router, prefix="/api/overview", tags=["overview"])
 app.include_router(suppliers.router, prefix="/api/suppliers", tags=["suppliers"])
+app.include_router(master_bahan.router, prefix="/api/master-bahan", tags=["master-bahan"])
+app.include_router(master_ukuran.router, prefix="/api/master-ukuran", tags=["master-ukuran"])
+app.include_router(master_warna.router, prefix="/api/master-warna", tags=["master-warna"])
+app.include_router(petani.router, prefix="/api/petani", tags=["petani"])
+app.include_router(wilayah.router, prefix="/api/wilayah", tags=["wilayah"])
+app.include_router(pic_master.router, prefix="/api/pic", tags=["pic"])
 app.include_router(purchases.router, prefix="/api/purchases", tags=["purchases"])
 app.include_router(payments.router, prefix="/api/payments", tags=["payments"])
 app.include_router(kas.router, prefix="/api/kas", tags=["kas"])
