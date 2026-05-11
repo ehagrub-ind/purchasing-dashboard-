@@ -4,7 +4,7 @@ import Sidebar from '@/components/Sidebar';
 import Topbar from '@/components/Topbar';
 
 export const metadata: Metadata = {
-  title: 'Purchasing Dashboard - Pak Regen',
+  title: 'IHC Purchasing Dashboard',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -12,9 +12,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="id">
       <body>
         <Sidebar />
-        <div className="ml-[250px] min-h-screen">
+        <div className="ml-[260px] min-h-screen">
           <Topbar />
-          <main className="p-6">
+          <main className="px-8 py-6">
             {children}
           </main>
         </div>

@@ -1,25 +1,33 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 @theme {
-  --color-border: hsl(214.3 31.8% 91.4%);
-  --color-input: hsl(214.3 31.8% 91.4%);
-  --color-ring: hsl(221.2 83.2% 53.3%);
-  --color-background: hsl(220 20% 97%);
-  --color-foreground: hsl(222.2 84% 4.9%);
-  --color-primary: hsl(221.2 83.2% 53.3%);
-  --color-primary-foreground: hsl(210 40% 98%);
-  --color-secondary: hsl(210 40% 96.1%);
-  --color-secondary-foreground: hsl(222.2 47.4% 11.2%);
-  --color-destructive: hsl(0 84.2% 60.2%);
-  --color-destructive-foreground: hsl(210 40% 98%);
-  --color-muted: hsl(210 40% 96.1%);
-  --color-muted-foreground: hsl(215.4 16.3% 46.9%);
-  --color-accent: hsl(210 40% 96.1%);
-  --color-accent-foreground: hsl(222.2 47.4% 11.2%);
+  --color-border: hsl(220 13% 91%);
+  --color-input: hsl(220 13% 91%);
+  --color-ring: hsl(262 83% 58%);
+  --color-background: hsl(225 14% 95.5%);
+  --color-foreground: hsl(224 71% 4%);
+  --color-primary: hsl(262 83% 58%);
+  --color-primary-foreground: hsl(0 0% 100%);
+  --color-secondary: hsl(220 14% 96%);
+  --color-secondary-foreground: hsl(224 71% 4%);
+  --color-destructive: hsl(0 84% 60%);
+  --color-destructive-foreground: hsl(0 0% 100%);
+  --color-muted: hsl(220 14% 96%);
+  --color-muted-foreground: hsl(220 9% 46%);
+  --color-accent: hsl(262 83% 58% / 0.08);
+  --color-accent-foreground: hsl(262 83% 58%);
   --color-card: hsl(0 0% 100%);
-  --color-card-foreground: hsl(222.2 84% 4.9%);
-  --radius: 0.5rem;
+  --color-card-foreground: hsl(224 71% 4%);
+  --color-popover: hsl(0 0% 100%);
+  --color-popover-foreground: hsl(224 71% 4%);
+  --radius: 0.625rem;
+
+  --color-sidebar: hsl(252 58% 18%);
+  --color-sidebar-foreground: hsl(0 0% 100%);
+  --color-sidebar-muted: hsl(0 0% 100% / 0.5);
+  --color-sidebar-accent: hsl(0 0% 100% / 0.12);
+  --color-sidebar-active: hsl(0 0% 100% / 0.2);
 }
 
 @layer base {
@@ -30,8 +38,26 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer components {
+  .gradient-card-purple {
+    background: linear-gradient(135deg, hsl(262 83% 58%) 0%, hsl(280 70% 50%) 100%);
+  }
+  .gradient-card-blue {
+    background: linear-gradient(135deg, hsl(217 91% 60%) 0%, hsl(199 89% 48%) 100%);
+  }
+  .gradient-card-orange {
+    background: linear-gradient(135deg, hsl(25 95% 53%) 0%, hsl(43 96% 56%) 100%);
+  }
+  .gradient-card-pink {
+    background: linear-gradient(135deg, hsl(340 82% 52%) 0%, hsl(316 73% 52%) 100%);
+  }
+  .gradient-card-emerald {
+    background: linear-gradient(135deg, hsl(160 84% 39%) 0%, hsl(142 71% 45%) 100%);
   }
 }
