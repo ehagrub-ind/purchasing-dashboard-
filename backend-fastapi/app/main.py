@@ -3,10 +3,22 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+import logging
 import os
 
 from .database import engine
 from .models import Base
+
+
+class _HealthAccessFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        try:
+            return "/api/health" not in record.args[2]
+        except (TypeError, IndexError, AttributeError):
+            return True
+
+
+logging.getLogger("uvicorn.access").addFilter(_HealthAccessFilter())
 from .routers import overview, suppliers, purchases, payments, kas, operasional, fees, import_india, master_bahan, master_ukuran, master_warna, petani, wilayah, pic_master, user_team, piutang, hutang, arus_kas, auth, penjualan
 
 
