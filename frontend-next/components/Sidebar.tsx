@@ -4,9 +4,10 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Users, ShoppingBag, DollarSign,
-  FileText, BarChart3, Settings, Database, ChevronRight, CreditCard, ArrowLeftRight,
+  FileText, BarChart3, Settings, Database, ChevronRight, CreditCard, ArrowLeftRight, LogOut,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/lib/auth';
 
 const NAV_ITEMS = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -26,6 +27,7 @@ const REPORT_ITEMS = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { user, logout } = useAuth();
 
   return (
     <aside className="fixed left-0 top-0 z-40 flex h-screen w-[260px] flex-col"
@@ -88,17 +90,24 @@ export default function Sidebar() {
       </nav>
 
       {/* Footer - User */}
-      <div className="border-t border-white/10 p-4">
+      <div className="border-t border-white/10 p-4 space-y-2">
         <div className="flex items-center gap-3 rounded-xl bg-white/10 px-3 py-2.5">
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-[11px] font-bold text-white shadow-md">
-            D
+            {(user?.nama || 'U')[0].toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[13px] font-semibold text-white truncate">David</p>
-            <p className="text-[10px] text-white/50">Owner</p>
+            <p className="text-[13px] font-semibold text-white truncate">{user?.nama || 'User'}</p>
+            <p className="text-[10px] text-white/50">{user?.role || '-'}</p>
           </div>
           <div className="h-2 w-2 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50" />
         </div>
+        <button
+          onClick={logout}
+          className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-[12px] font-medium text-white/50 hover:bg-white/10 hover:text-white transition-all"
+        >
+          <LogOut className="h-3.5 w-3.5" />
+          Keluar
+        </button>
       </div>
     </aside>
   );

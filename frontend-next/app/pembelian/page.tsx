@@ -19,7 +19,7 @@ import {
   Receipt, Globe, Wallet, CreditCard,
   Plus, X, ShoppingCart, FileText, CheckCircle2,
   AlertTriangle, Calendar, MapPin, Tag, Hash,
-  User, Truck, Plane,
+  User, Truck, Plane, ClipboardPaste, Trash2, Edit3,
 } from 'lucide-react';
 
 Chart.register(...registerables);
@@ -966,6 +966,75 @@ function ImportSemuaTxn({ data }: { data: any }) {
 const KATEGORI_OPTIONS = ['R Salon', 'Uk 6-8 / Retul', 'Remy', 'Lus', 'Brangkas', 'Lainnya'];
 const WILAYAH_OPTIONS = ['Jatim', 'Jateng', 'Jabar'];
 
+type PastedRow = {
+  jenis: string;
+  kategori: string;
+  qty: string;
+  price: string;
+  petani: string;
+  keterangan: string;
+  valid: boolean;
+  error?: string;
+};
+
+function parsePastedText(text: string, masterBahan: any[]): PastedRow[] {
+  const lines = text.trim().split('\n').filter(l => l.trim());
+  const rows: PastedRow[] = [];
+
+  for (const line of lines) {
+    const cols = line.split('\t').map(c => c.trim());
+    if (cols.length < 3) {
+      rows.push({ jenis: cols[0] || '', kategori: '', qty: '', price: '', petani: '', keterangan: '', valid: false, error: 'Minimal 3 kolom (Jenis, Qty, Harga)' });
+      continue;
+    }
+
+    let jenis = '', kategori = '', qty = '', price = '', petani = '', keterangan = '';
+
+    if (cols.length === 3) {
+      [jenis, qty, price] = cols;
+    } else if (cols.length === 4) {
+      [jenis, kategori, qty, price] = cols;
+    } else if (cols.length === 5) {
+      [jenis, kategori, qty, price, petani] = cols;
+    } else {
+      [jenis, kategori, qty, price, petani, keterangan] = cols;
+    }
+
+    const qtyNum = parseFloat(qty.replace(/[,\.]/g, (m, i) => {
+      const rest = qty.slice(i + 1);
+      return rest.includes(',') || rest.includes('.') ? '' : '.';
+    }).replace(/[^0-9.]/g, ''));
+    const priceNum = parseFloat(price.replace(/[,\.]/g, (m, i) => {
+      const rest = price.slice(i + 1);
+      return rest.includes(',') || rest.includes('.') ? '' : '.';
+    }).replace(/[^0-9.]/g, ''));
+
+    const mb = masterBahan.find((b: any) =>
+      b.nama_bahan.toLowerCase() === jenis.toLowerCase() ||
+      b.kode_bahan?.toLowerCase() === jenis.toLowerCase()
+    );
+    if (mb) {
+      jenis = mb.nama_bahan;
+      if (!kategori) kategori = mb.kategori_bahan;
+    }
+
+    const valid = !!(jenis && !isNaN(qtyNum) && qtyNum > 0 && !isNaN(priceNum) && priceNum > 0);
+    const error = !jenis ? 'Jenis kosong' : (isNaN(qtyNum) || qtyNum <= 0) ? 'Qty tidak valid' : (isNaN(priceNum) || priceNum <= 0) ? 'Harga tidak valid' : undefined;
+
+    rows.push({
+      jenis,
+      kategori: kategori || '',
+      qty: isNaN(qtyNum) ? qty : String(qtyNum),
+      price: isNaN(priceNum) ? price : String(priceNum),
+      petani,
+      keterangan,
+      valid,
+      error,
+    });
+  }
+  return rows;
+}
+
 function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, onClose, onCreated }: {
   suppliers: any[];
   masterBahan: any[];
@@ -980,6 +1049,10 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, onClos
   const [success, setSuccess] = useState(false);
   const [isManualJenis, setIsManualJenis] = useState(false);
   const [petaniList, setPetaniList] = useState<any[]>([]);
+  const [mode, setMode] = useState<'manual' | 'paste'>('manual');
+  const [pasteText, setPasteText] = useState('');
+  const [pastedRows, setPastedRows] = useState<PastedRow[]>([]);
+  const [bulkProgress, setBulkProgress] = useState({ done: 0, total: 0, errors: [] as string[] });
 
   const [form, setForm] = useState({
     jalur: 'Lokal' as 'Lokal' | 'Impor',
@@ -999,6 +1072,17 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, onClos
 
   const isImpor = form.jalur === 'Impor';
 
+  const filteredUkuran = masterUkuran
+    .filter((u: any) => {
+      const code = parseInt(u.kode_ukuran);
+      if (isNaN(code)) return true;
+      const j = form.jenis.toLowerCase();
+      if (j.includes('retul')) return code >= 7 && code <= 30;
+      if (j.includes('remy')) return code >= 10 && code <= 30 && code % 5 === 0;
+      return true;
+    })
+    .sort((a: any, b: any) => parseInt(a.kode_ukuran) - parseInt(b.kode_ukuran));
+
   const lokalSuppliers = suppliers.filter((s: any) => (s.jalur || 'Lokal') === 'Lokal');
   const imporSuppliers = suppliers.filter((s: any) => s.jalur === 'Impor');
   const uniquePics = [...new Set(lokalSuppliers.map((s: any) => s.pic).filter(Boolean))] as string[];
@@ -1017,6 +1101,8 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, onClos
     }));
     setPetaniList([]);
     setIsManualJenis(false);
+    setPastedRows([]);
+    setPasteText('');
   }
 
   function handlePicChange(pic: string) {
@@ -1052,24 +1138,94 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, onClos
     }
   }
 
+  function handleParsePaste() {
+    const rows = parsePastedText(pasteText, masterBahan);
+    setPastedRows(rows);
+  }
+
+  function removePastedRow(idx: number) {
+    setPastedRows(r => r.filter((_, i) => i !== idx));
+  }
+
+  function editPastedRow(idx: number, field: keyof PastedRow, value: string) {
+    setPastedRows(prev => {
+      const updated = [...prev];
+      const row = { ...updated[idx], [field]: value };
+      const qtyNum = parseFloat(row.qty);
+      const priceNum = parseFloat(row.price);
+      row.valid = !!(row.jenis && !isNaN(qtyNum) && qtyNum > 0 && !isNaN(priceNum) && priceNum > 0);
+      row.error = !row.jenis ? 'Jenis kosong' : (isNaN(qtyNum) || qtyNum <= 0) ? 'Qty tidak valid' : (isNaN(priceNum) || priceNum <= 0) ? 'Harga tidak valid' : undefined;
+      updated[idx] = row;
+      return updated;
+    });
+  }
+
   const jenisNotInMaster = isManualJenis && form.jenis && !masterBahan.some((b: any) => b.nama_bahan === form.jenis);
 
   const qty = parseFloat(form.qty) || 0;
   const price = parseFloat(form.price) || 0;
   const total = qty * price;
 
+  const validPastedRows = pastedRows.filter(r => r.valid);
+  const pastedTotal = validPastedRows.reduce((s, r) => s + (parseFloat(r.qty) || 0) * (parseFloat(r.price) || 0), 0);
+  const pastedTotalQty = validPastedRows.reduce((s, r) => s + (parseFloat(r.qty) || 0), 0);
+
   const selectedSupplier = suppliers.find((s: any) => String(s.id) === form.supplierId);
 
   const step1Valid = isImpor
     ? (form.date && form.supplierId)
     : (form.date && form.pic && form.supplierId && form.wilayah);
-  const step2Valid = isImpor
-    ? (form.ukuran && qty > 0 && price > 0)
-    : (form.jenis && form.kategori && qty > 0 && price > 0);
+
+  const step2Valid = mode === 'paste'
+    ? validPastedRows.length > 0
+    : isImpor
+      ? (form.ukuran && qty > 0 && price > 0)
+      : (form.jenis && form.kategori && qty > 0 && price > 0);
 
   async function handleSubmit() {
     setSubmitting(true);
     setSubmitError('');
+
+    if (mode === 'paste') {
+      const rows = validPastedRows;
+      setBulkProgress({ done: 0, total: rows.length, errors: [] });
+      const errors: string[] = [];
+
+      for (let i = 0; i < rows.length; i++) {
+        const r = rows[i];
+        try {
+          const jenis = r.jenis;
+          const kategori = r.kategori || 'Lainnya';
+          const desc = r.keterangan || `${jenis} ${kategori}`;
+          await api.createPurchase({
+            date: form.date,
+            supplierId: form.supplierId,
+            petani: r.petani || form.petani,
+            wilayah: form.wilayah || 'Impor',
+            jenis, kategori,
+            qty: r.qty,
+            price: r.price,
+            deskripsi: desc,
+          });
+        } catch (e: any) {
+          errors.push(`Baris ${i + 1} (${r.jenis}): ${e.message}`);
+        }
+        setBulkProgress({ done: i + 1, total: rows.length, errors });
+      }
+
+      setSubmitting(false);
+      if (errors.length === 0) {
+        setSuccess(true);
+        setTimeout(() => onCreated(), 1500);
+      } else if (errors.length < rows.length) {
+        setSuccess(true);
+        setTimeout(() => onCreated(), 2000);
+      } else {
+        setSubmitError(`Semua ${rows.length} baris gagal disimpan`);
+      }
+      return;
+    }
+
     try {
       const jenis = isImpor ? `Rambut India ${form.ukuran}"` : form.jenis;
       const kategori = isImpor ? 'Impor' : form.kategori;
@@ -1110,7 +1266,9 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, onClos
             </div>
             <div>
               <h3 className="text-lg font-semibold">Buat PO Baru</h3>
-              <p className="text-sm text-muted-foreground">Purchase Order pembelian bahan baku</p>
+              <p className="text-sm text-muted-foreground">
+                {mode === 'paste' && step >= 2 ? `Bulk — ${validPastedRows.length} item` : 'Purchase Order pembelian bahan baku'}
+              </p>
             </div>
           </div>
           <button onClick={onClose} className="rounded-lg p-2 hover:bg-accent transition-colors">
@@ -1124,10 +1282,29 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, onClos
             <div className="rounded-full bg-emerald-100 p-4">
               <CheckCircle2 className="h-10 w-10 text-emerald-600" />
             </div>
-            <h3 className="mt-4 text-xl font-semibold">PO Berhasil Dibuat!</h3>
+            <h3 className="mt-4 text-xl font-semibold">
+              {mode === 'paste' ? 'PO Bulk Berhasil!' : 'PO Berhasil Dibuat!'}
+            </h3>
             <p className="mt-2 text-muted-foreground">
-              Pembelian {isImpor ? `Rambut India ${form.ukuran}"` : form.jenis} dari {selectedSupplier?.name}{form.petani ? ` (${form.petani})` : ''} sebesar {fmtTotal(total)} telah disimpan.
+              {mode === 'paste' ? (
+                <>
+                  {bulkProgress.done - bulkProgress.errors.length} dari {bulkProgress.total} item berhasil disimpan.
+                  {bulkProgress.errors.length > 0 && (
+                    <span className="block mt-1 text-amber-600">{bulkProgress.errors.length} gagal.</span>
+                  )}
+                </>
+              ) : (
+                <>Pembelian {isImpor ? `Rambut India ${form.ukuran}"` : form.jenis} dari {selectedSupplier?.name}{form.petani ? ` (${form.petani})` : ''} sebesar {fmtTotal(total)} telah disimpan.</>
+              )}
             </p>
+            {bulkProgress.errors.length > 0 && (
+              <div className="mt-4 w-full max-w-md text-left">
+                <p className="text-sm font-medium text-destructive mb-2">Detail error:</p>
+                {bulkProgress.errors.map((e, i) => (
+                  <p key={i} className="text-xs text-muted-foreground">{e}</p>
+                ))}
+              </div>
+            )}
           </div>
         ) : (
           <>
@@ -1136,7 +1313,7 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, onClos
               <div className="flex items-center gap-2">
                 {[
                   { n: 1, label: 'Jalur & Sumber' },
-                  { n: 2, label: 'Detail Barang' },
+                  { n: 2, label: mode === 'paste' ? 'Paste Data' : 'Detail Barang' },
                   { n: 3, label: 'Konfirmasi' },
                 ].map((s, i) => (
                   <div key={s.n} className="flex items-center gap-2 flex-1">
@@ -1246,7 +1423,7 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, onClos
                     <div>
                       <label className="text-sm font-medium mb-1.5 flex items-center gap-2">
                         <Package className="h-4 w-4 text-muted-foreground" />
-                        Supplier / Subcon
+                        Supplier
                       </label>
                       <Select
                         value={form.supplierId}
@@ -1354,11 +1531,208 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, onClos
                     )}
                   </div>
                 )}
+
+                {/* Mode selector at bottom of step 1 */}
+                {step1Valid && !isImpor && (
+                  <div className="pt-2 border-t">
+                    <label className="text-sm font-medium mb-2 block">Mode Input Barang</label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setMode('manual')}
+                        className={cn(
+                          "flex items-center gap-3 rounded-xl border-2 p-3 text-left transition-all",
+                          mode === 'manual'
+                            ? "border-primary bg-primary/5 ring-1 ring-primary/20"
+                            : "border-border hover:border-muted-foreground/30"
+                        )}
+                      >
+                        <Edit3 className={cn("h-4 w-4", mode === 'manual' ? "text-primary" : "text-muted-foreground")} />
+                        <div>
+                          <p className="font-semibold text-sm">Manual</p>
+                          <p className="text-xs text-muted-foreground">Input 1 item</p>
+                        </div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setMode('paste')}
+                        className={cn(
+                          "flex items-center gap-3 rounded-xl border-2 p-3 text-left transition-all",
+                          mode === 'paste'
+                            ? "border-primary bg-primary/5 ring-1 ring-primary/20"
+                            : "border-border hover:border-muted-foreground/30"
+                        )}
+                      >
+                        <ClipboardPaste className={cn("h-4 w-4", mode === 'paste' ? "text-primary" : "text-muted-foreground")} />
+                        <div>
+                          <p className="font-semibold text-sm">Paste dari Excel</p>
+                          <p className="text-xs text-muted-foreground">Bulk banyak item</p>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
-            {/* Step 2: Detail Barang */}
-            {step === 2 && !isImpor && (
+            {/* Step 2: Paste Mode */}
+            {step === 2 && mode === 'paste' && (
+              <div className="space-y-5 px-6 py-4">
+                {pastedRows.length === 0 ? (
+                  <>
+                    <div className="rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 p-5">
+                      <div className="flex items-center gap-2 mb-3">
+                        <ClipboardPaste className="h-5 w-5 text-primary" />
+                        <p className="font-semibold text-sm">Paste Data dari Excel</p>
+                      </div>
+                      <p className="text-xs text-muted-foreground mb-4">
+                        Copy baris dari Excel lalu paste di bawah. Format kolom (pisah Tab):
+                      </p>
+                      <div className="rounded-lg bg-muted/80 p-3 mb-4">
+                        <p className="text-xs font-mono text-muted-foreground">
+                          <span className="font-semibold text-foreground">Jenis</span> &nbsp;[Tab]&nbsp;
+                          <span className="font-semibold text-foreground">Kategori</span> &nbsp;[Tab]&nbsp;
+                          <span className="font-semibold text-foreground">Qty</span> &nbsp;[Tab]&nbsp;
+                          <span className="font-semibold text-foreground">Harga</span> &nbsp;[Tab]&nbsp;
+                          <span className="text-muted-foreground">Petani</span> &nbsp;[Tab]&nbsp;
+                          <span className="text-muted-foreground">Keterangan</span>
+                        </p>
+                        <p className="text-[10px] text-muted-foreground mt-1.5">
+                          Minimal 3 kolom (Jenis, Qty, Harga). Kategori, Petani, Keterangan opsional.
+                        </p>
+                      </div>
+                      <textarea
+                        className="w-full min-h-[140px] rounded-lg border bg-white p-3 text-sm font-mono placeholder:text-muted-foreground/50 focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all"
+                        placeholder={"Brangkas\tBahan Baku\t50\t200000\nRemy Biasa\tRemy\t10\t650000\tPak Tarno\nLus Panjang\t\t25\t450000"}
+                        value={pasteText}
+                        onChange={e => setPasteText(e.target.value)}
+                      />
+                      <Button
+                        className="w-full mt-3"
+                        disabled={!pasteText.trim()}
+                        onClick={handleParsePaste}
+                      >
+                        <ClipboardPaste className="mr-2 h-4 w-4" />
+                        Proses Data ({pasteText.trim().split('\n').filter(l => l.trim()).length} baris)
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    {/* Parsed results table */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                        <p className="text-sm font-semibold">
+                          {validPastedRows.length} item valid
+                          {pastedRows.length !== validPastedRows.length && (
+                            <span className="text-destructive font-normal ml-1">
+                              ({pastedRows.length - validPastedRows.length} error)
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => { setPastedRows([]); setPasteText(''); }}
+                      >
+                        <ClipboardPaste className="mr-1.5 h-3.5 w-3.5" />
+                        Paste Ulang
+                      </Button>
+                    </div>
+
+                    <div className="rounded-lg border overflow-hidden">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-8">#</TableHead>
+                            <TableHead>Jenis</TableHead>
+                            <TableHead>Kategori</TableHead>
+                            <TableHead className="text-right">Qty</TableHead>
+                            <TableHead className="text-right">Harga</TableHead>
+                            <TableHead className="text-right">Total</TableHead>
+                            <TableHead className="w-8"></TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {pastedRows.map((row, i) => {
+                            const rQty = parseFloat(row.qty) || 0;
+                            const rPrice = parseFloat(row.price) || 0;
+                            return (
+                              <TableRow key={i} className={!row.valid ? 'bg-destructive/5' : undefined}>
+                                <TableCell className="text-muted-foreground text-xs">{i + 1}</TableCell>
+                                <TableCell>
+                                  <input
+                                    className="bg-transparent text-sm font-medium w-full outline-none border-b border-transparent hover:border-muted-foreground/30 focus:border-primary transition-colors"
+                                    value={row.jenis}
+                                    onChange={e => editPastedRow(i, 'jenis', e.target.value)}
+                                  />
+                                  {row.error && (
+                                    <p className="text-[10px] text-destructive mt-0.5">{row.error}</p>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  <select
+                                    className="bg-transparent text-sm w-full outline-none cursor-pointer"
+                                    value={row.kategori}
+                                    onChange={e => editPastedRow(i, 'kategori', e.target.value)}
+                                  >
+                                    <option value="">-</option>
+                                    {KATEGORI_OPTIONS.map(k => <option key={k} value={k}>{k}</option>)}
+                                    <option value="Bahan Baku">Bahan Baku</option>
+                                    <option value="Bahan Proses">Bahan Proses</option>
+                                    <option value="Recycle/WIP">Recycle/WIP</option>
+                                  </select>
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <input
+                                    className="bg-transparent text-sm text-right w-16 outline-none border-b border-transparent hover:border-muted-foreground/30 focus:border-primary transition-colors"
+                                    value={row.qty}
+                                    onChange={e => editPastedRow(i, 'qty', e.target.value)}
+                                  />
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <input
+                                    className="bg-transparent text-sm text-right w-24 outline-none border-b border-transparent hover:border-muted-foreground/30 focus:border-primary transition-colors"
+                                    value={row.price}
+                                    onChange={e => editPastedRow(i, 'price', e.target.value)}
+                                  />
+                                </TableCell>
+                                <TableCell className="text-right font-semibold text-sm">
+                                  {rQty > 0 && rPrice > 0 ? rupiahFull(rQty * rPrice) : '-'}
+                                </TableCell>
+                                <TableCell>
+                                  <button onClick={() => removePastedRow(i)} className="p-1 rounded hover:bg-destructive/10 transition-colors">
+                                    <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
+                                  </button>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </div>
+
+                    {/* Paste totals */}
+                    {validPastedRows.length > 0 && (
+                      <div className="rounded-lg border-2 border-primary/20 bg-primary/5 p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <span className="text-sm font-medium text-muted-foreground">Total {validPastedRows.length} item</span>
+                            <p className="text-xs text-muted-foreground mt-0.5">{kg(pastedTotalQty)} total berat</p>
+                          </div>
+                          <span className="text-2xl font-bold text-primary">{rupiahFull(pastedTotal)}</span>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Step 2: Detail Barang — Manual Lokal */}
+            {step === 2 && mode === 'manual' && !isImpor && (
               <div className="space-y-5 px-6 py-4">
                 <div>
                   <label className="text-sm font-medium mb-1.5 flex items-center gap-2">
@@ -1443,7 +1817,7 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, onClos
                     </label>
                     <Select value={form.ukuran} onChange={e => update('ukuran', e.target.value)}>
                       <option value="">-- Pilih Ukuran --</option>
-                      {masterUkuran.map((u: any) => (
+                      {filteredUkuran.map((u: any) => (
                         <option key={u.id} value={u.kode_ukuran}>{u.nama_ukuran}</option>
                       ))}
                     </Select>
@@ -1513,7 +1887,7 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, onClos
                     </label>
                     <Select value={form.ukuran} onChange={e => update('ukuran', e.target.value)}>
                       <option value="">-- Pilih Ukuran --</option>
-                      {masterUkuran.map((u: any) => (
+                      {filteredUkuran.map((u: any) => (
                         <option key={u.id} value={u.kode_ukuran}>{u.nama_ukuran}</option>
                       ))}
                     </Select>
@@ -1580,6 +1954,7 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, onClos
                     <CardTitle className="text-base flex items-center gap-2">
                       Ringkasan PO
                       <Badge variant={isImpor ? 'default' : 'success'}>{form.jalur}</Badge>
+                      {mode === 'paste' && <Badge variant="purple">Bulk {validPastedRows.length} item</Badge>}
                     </CardTitle>
                     <CardDescription>Pastikan semua data sudah benar sebelum menyimpan.</CardDescription>
                   </CardHeader>
@@ -1611,44 +1986,108 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, onClos
                           </div>
                         </>
                       )}
-                      <div>
-                        <p className="text-muted-foreground">{isImpor ? 'Barang' : 'Jenis'}</p>
-                        <p className="font-medium">{isImpor ? `Rambut India ${form.ukuran}"` : form.jenis}</p>
-                      </div>
-                      {!isImpor && (
-                        <div>
-                          <p className="text-muted-foreground">Kategori</p>
-                          <p className="font-medium">{form.kategori}</p>
-                        </div>
-                      )}
-                      <div>
-                        <p className="text-muted-foreground">Qty</p>
-                        <p className="font-medium">{kg(qty)}</p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Harga/Kg</p>
-                        <p className="font-medium">{fmtPrice(price)}</p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Keterangan</p>
-                        <p className="font-medium">{form.deskripsi || '-'}</p>
-                      </div>
                     </div>
 
-                    <div className={cn(
-                      "mt-4 rounded-lg border-2 p-4",
-                      isImpor ? "border-blue-200 bg-blue-50" : "border-primary/20 bg-primary/5"
-                    )}>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">TOTAL</span>
-                        <span className={cn(
-                          "text-2xl font-bold",
-                          isImpor ? "text-blue-700" : "text-primary"
-                        )}>{fmtTotal(total)}</span>
-                      </div>
-                    </div>
+                    {mode === 'paste' ? (
+                      <>
+                        <div className="mt-3 rounded-lg border overflow-hidden">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>#</TableHead>
+                                <TableHead>Jenis</TableHead>
+                                <TableHead>Kategori</TableHead>
+                                <TableHead className="text-right">Qty</TableHead>
+                                <TableHead className="text-right">Harga</TableHead>
+                                <TableHead className="text-right">Total</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {validPastedRows.map((row, i) => {
+                                const rQ = parseFloat(row.qty) || 0;
+                                const rP = parseFloat(row.price) || 0;
+                                return (
+                                  <TableRow key={i}>
+                                    <TableCell className="text-muted-foreground text-xs">{i + 1}</TableCell>
+                                    <TableCell className="font-medium">{row.jenis}</TableCell>
+                                    <TableCell>{row.kategori || '-'}</TableCell>
+                                    <TableCell className="text-right">{kg(rQ)}</TableCell>
+                                    <TableCell className="text-right">{rupiahFull(rP)}</TableCell>
+                                    <TableCell className="text-right font-semibold">{rupiahFull(rQ * rP)}</TableCell>
+                                  </TableRow>
+                                );
+                              })}
+                            </TableBody>
+                          </Table>
+                        </div>
+                        <div className="rounded-lg border-2 border-primary/20 bg-primary/5 p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <span className="text-sm font-medium">TOTAL {validPastedRows.length} item</span>
+                              <p className="text-xs text-muted-foreground mt-0.5">{kg(pastedTotalQty)} total berat</p>
+                            </div>
+                            <span className="text-2xl font-bold text-primary">{rupiahFull(pastedTotal)}</span>
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+                          <div>
+                            <p className="text-muted-foreground">{isImpor ? 'Barang' : 'Jenis'}</p>
+                            <p className="font-medium">{isImpor ? `Rambut India ${form.ukuran}"` : form.jenis}</p>
+                          </div>
+                          {!isImpor && (
+                            <div>
+                              <p className="text-muted-foreground">Kategori</p>
+                              <p className="font-medium">{form.kategori}</p>
+                            </div>
+                          )}
+                          <div>
+                            <p className="text-muted-foreground">Qty</p>
+                            <p className="font-medium">{kg(qty)}</p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Harga/Kg</p>
+                            <p className="font-medium">{fmtPrice(price)}</p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Keterangan</p>
+                            <p className="font-medium">{form.deskripsi || '-'}</p>
+                          </div>
+                        </div>
+
+                        <div className={cn(
+                          "mt-4 rounded-lg border-2 p-4",
+                          isImpor ? "border-blue-200 bg-blue-50" : "border-primary/20 bg-primary/5"
+                        )}>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium">TOTAL</span>
+                            <span className={cn(
+                              "text-2xl font-bold",
+                              isImpor ? "text-blue-700" : "text-primary"
+                            )}>{fmtTotal(total)}</span>
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </CardContent>
                 </Card>
+
+                {submitting && mode === 'paste' && bulkProgress.total > 0 && (
+                  <div className="rounded-lg border bg-muted/30 p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium">Menyimpan...</span>
+                      <span className="text-sm text-muted-foreground">{bulkProgress.done}/{bulkProgress.total}</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-muted overflow-hidden">
+                      <div
+                        className="h-full bg-primary rounded-full transition-all duration-300"
+                        style={{ width: `${(bulkProgress.done / bulkProgress.total) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
 
                 {submitError && (
                   <div className="flex items-center gap-2 rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
@@ -1681,12 +2120,12 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, onClos
                   {submitting ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Menyimpan...
+                      {mode === 'paste' ? `Menyimpan ${bulkProgress.done}/${bulkProgress.total}...` : 'Menyimpan...'}
                     </>
                   ) : (
                     <>
                       <CheckCircle2 className="mr-2 h-4 w-4" />
-                      Simpan PO
+                      {mode === 'paste' ? `Simpan ${validPastedRows.length} PO` : 'Simpan PO'}
                     </>
                   )}
                 </Button>

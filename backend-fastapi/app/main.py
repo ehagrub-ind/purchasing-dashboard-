@@ -7,7 +7,7 @@ import os
 
 from .database import engine
 from .models import Base
-from .routers import overview, suppliers, purchases, payments, kas, operasional, fees, import_india, master_bahan, master_ukuran, master_warna, petani, wilayah, pic_master, user_team, piutang, hutang, arus_kas
+from .routers import overview, suppliers, purchases, payments, kas, operasional, fees, import_india, master_bahan, master_ukuran, master_warna, petani, wilayah, pic_master, user_team, piutang, hutang, arus_kas, auth
 
 
 async def _ensure_columns(conn):
@@ -16,10 +16,12 @@ async def _ensure_columns(conn):
     def _check(sync_conn):
         insp = sa_inspect(sync_conn)
         result = {}
-        for tbl in ("suppliers", "purchases", "petani", "master_bahan"):
+        for tbl in ("suppliers", "purchases", "petani", "master_bahan", "user_team"):
             result[tbl] = {c["name"] for c in insp.get_columns(tbl)} if insp.has_table(tbl) else set()
         return result
     existing = await conn.run_sync(_check)
+    if existing["user_team"] and "password_hash" not in existing["user_team"]:
+        await conn.execute(text("ALTER TABLE user_team ADD COLUMN password_hash VARCHAR DEFAULT ''"))
     if "pic" not in existing["suppliers"]:
         await conn.execute(text("ALTER TABLE suppliers ADD COLUMN pic VARCHAR DEFAULT ''"))
     if "jalur" not in existing["suppliers"]:
@@ -68,6 +70,7 @@ app.include_router(user_team.router, prefix="/api/users", tags=["users"])
 app.include_router(piutang.router, prefix="/api/piutang", tags=["piutang"])
 app.include_router(hutang.router, prefix="/api/hutang", tags=["hutang"])
 app.include_router(arus_kas.router, prefix="/api/arus-kas", tags=["arus-kas"])
+app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 
 
 @app.get("/api/health")

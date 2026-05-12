@@ -65,6 +65,7 @@ class UserTeam(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     nama: Mapped[str] = mapped_column(String)
     email: Mapped[str] = mapped_column(String, unique=True)
+    password_hash: Mapped[str] = mapped_column(String, default="")
     telepon: Mapped[str] = mapped_column(String, default="")
     role: Mapped[str] = mapped_column(String, default="PIC")
     aktif: Mapped[bool] = mapped_column(Boolean, default=True)
