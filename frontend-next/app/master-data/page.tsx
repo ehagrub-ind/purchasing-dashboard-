@@ -32,8 +32,7 @@ export default function MasterDataPage() {
           <TabsTrigger value="ukuran" className="gap-1.5"><Ruler className="h-3.5 w-3.5" />Ukuran</TabsTrigger>
           <TabsTrigger value="warna" className="gap-1.5"><Palette className="h-3.5 w-3.5" />Warna</TabsTrigger>
           <TabsTrigger value="wilayah" className="gap-1.5"><MapPin className="h-3.5 w-3.5" />Wilayah</TabsTrigger>
-          <TabsTrigger value="subcon" className="gap-1.5"><Users className="h-3.5 w-3.5" />Subcon</TabsTrigger>
-          <TabsTrigger value="petani" className="gap-1.5"><Sprout className="h-3.5 w-3.5" />Petani</TabsTrigger>
+          <TabsTrigger value="subcon" className="gap-1.5"><Users className="h-3.5 w-3.5" />Supplier</TabsTrigger>
           <TabsTrigger value="pic" className="gap-1.5"><UserCog className="h-3.5 w-3.5" />PIC</TabsTrigger>
         </TabsList>
 
@@ -42,7 +41,6 @@ export default function MasterDataPage() {
         <TabsContent value="warna"><WarnaTab /></TabsContent>
         <TabsContent value="wilayah"><WilayahTab /></TabsContent>
         <TabsContent value="subcon"><SubconTab /></TabsContent>
-        <TabsContent value="petani"><PetaniTab /></TabsContent>
         <TabsContent value="pic"><PICTab /></TabsContent>
       </Tabs>
     </div>
@@ -501,15 +499,8 @@ function WilayahTab() {
 
   return (
     <div className="space-y-4 mt-4">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard icon={<MapPin className="h-4 w-4 text-blue-600" />} label="Total Wilayah" value={data.filter(w => w.aktif).length} color="bg-blue-100" />
-        <StatCard icon={<MapPin className="h-4 w-4 text-emerald-600" />} label="Jateng" value={byProv['JATENG'] || 0} color="bg-emerald-100" />
-        <StatCard icon={<MapPin className="h-4 w-4 text-violet-600" />} label="Jatim" value={byProv['JATIM'] || 0} color="bg-violet-100" />
-        <StatCard icon={<MapPin className="h-4 w-4 text-amber-600" />} label="Jabar" value={byProv['JABAR'] || 0} color="bg-amber-100" />
-      </div>
       <div className="flex items-center gap-3">
         <div className="relative flex-1"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input className="pl-9" placeholder="Cari wilayah..." value={search} onChange={e => setSearch(e.target.value)} /></div>
-        <Select value={provFilter} onChange={e => setProvFilter(e.target.value)}><option value="">Semua Provinsi</option><option value="JATENG">Jateng</option><option value="JATIM">Jatim</option><option value="JABAR">Jabar</option></Select>
         <Button onClick={() => setModal({ mode: 'add' })}><Plus className="h-4 w-4 mr-1" />Tambah</Button>
       </div>
       <Card>
@@ -517,15 +508,12 @@ function WilayahTab() {
         <CardContent>
           <Table>
             <TableHeader><TableRow>
-              <TableHead>Kode</TableHead><TableHead>Nama Wilayah</TableHead><TableHead>Provinsi</TableHead><TableHead>PIC</TableHead><TableHead>Status</TableHead><TableHead>Aksi</TableHead>
+              <TableHead>Nama Wilayah</TableHead><TableHead>Status</TableHead><TableHead>Aksi</TableHead>
             </TableRow></TableHeader>
             <TableBody>
-              {filtered.length === 0 ? <EmptyRow cols={6} /> : filtered.map(w => (
+              {filtered.length === 0 ? <EmptyRow cols={3} /> : filtered.map(w => (
                 <TableRow key={w.id}>
-                  <TableCell><Badge variant="secondary" className="font-mono">{w.kode_wilayah}</Badge></TableCell>
                   <TableCell className="font-medium">{w.nama_wilayah}</TableCell>
-                  <TableCell><Badge variant={w.provinsi === 'JATENG' ? 'success' : w.provinsi === 'JATIM' ? 'purple' : 'warning'}>{w.provinsi}</Badge></TableCell>
-                  <TableCell><Badge variant="default">{w.pic}</Badge></TableCell>
                   <TableCell><StatusBadge aktif={w.aktif} /></TableCell>
                   <TableCell><ActionButtons onEdit={() => setModal({ mode: 'edit', item: w })} onToggle={() => handleToggle(w.id)} onDelete={() => handleDelete(w.id)} aktif={w.aktif} /></TableCell>
                 </TableRow>
@@ -543,17 +531,10 @@ function WilayahModal({ mode, item, onClose, onSave }: { mode: string; item?: an
   const [f, setF] = useState({ kode_wilayah: item?.kode_wilayah || '', nama_wilayah: item?.nama_wilayah || '', provinsi: item?.provinsi || '', pic: item?.pic || '' });
   return (
     <Modal title={mode === 'add' ? 'Tambah Wilayah' : 'Edit Wilayah'} onClose={onClose}>
-      <Field label="Kode Wilayah"><Input value={f.kode_wilayah} onChange={e => setF({ ...f, kode_wilayah: e.target.value })} placeholder="WIL-21" /></Field>
-      <Field label="Nama Wilayah"><Input value={f.nama_wilayah} onChange={e => setF({ ...f, nama_wilayah: e.target.value })} /></Field>
-      <Field label="Provinsi">
-        <Select value={f.provinsi} onChange={e => setF({ ...f, provinsi: e.target.value })}>
-          <option value="">-- Pilih --</option><option value="JATENG">JATENG</option><option value="JATIM">JATIM</option><option value="JABAR">JABAR</option>
-        </Select>
-      </Field>
-      <Field label="PIC"><Input value={f.pic} onChange={e => setF({ ...f, pic: e.target.value })} placeholder="RIGEN / PAKDE" /></Field>
+      <Field label="Nama Wilayah"><Input value={f.nama_wilayah} onChange={e => setF({ ...f, nama_wilayah: e.target.value, kode_wilayah: e.target.value.toUpperCase().replace(/\s+/g, '-'), provinsi: e.target.value.toUpperCase(), pic: 'RIGEN' })} placeholder="Contoh: Jawa Timur" /></Field>
       <div className="flex justify-end gap-2 pt-2">
         <Button variant="outline" onClick={onClose}>Batal</Button>
-        <Button onClick={() => onSave({ ...f, ...(item?.id ? { id: item.id } : {}) })} disabled={!f.kode_wilayah || !f.nama_wilayah || !f.provinsi}>Simpan</Button>
+        <Button onClick={() => onSave({ ...f, ...(item?.id ? { id: item.id } : {}) })} disabled={!f.nama_wilayah}>Simpan</Button>
       </div>
     </Modal>
   );
@@ -582,7 +563,7 @@ function SubconTab() {
   const impor = data.filter(s => s.jalur === 'Impor').length;
 
   async function handleToggle(id: number) { await api.toggleSupplier(id); load(); }
-  async function handleDelete(id: number) { if (confirm('Hapus subcon ini?')) { await api.deleteSupplier(id); load(); } }
+  async function handleDelete(id: number) { if (confirm('Hapus supplier ini?')) { await api.deleteSupplier(id); load(); } }
   async function handleSave(item: any) {
     if (item.id) await api.updateSupplier(item.id, item);
     else await api.createSupplier(item);
@@ -593,30 +574,21 @@ function SubconTab() {
 
   return (
     <div className="space-y-4 mt-4">
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-        <StatCard icon={<Users className="h-4 w-4 text-blue-600" />} label="Total Subcon" value={data.length} color="bg-blue-100" />
-        <StatCard icon={<Users className="h-4 w-4 text-emerald-600" />} label="Lokal" value={lokal} color="bg-emerald-100" />
-        <StatCard icon={<Users className="h-4 w-4 text-violet-600" />} label="Impor" value={impor} color="bg-violet-100" />
-      </div>
       <div className="flex items-center gap-3">
-        <div className="relative flex-1"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input className="pl-9" placeholder="Cari subcon..." value={search} onChange={e => setSearch(e.target.value)} /></div>
-        <Select value={jalurFilter} onChange={e => setJalurFilter(e.target.value)}><option value="">Semua Jalur</option><option value="Lokal">Lokal</option><option value="Impor">Impor</option></Select>
+        <div className="relative flex-1"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input className="pl-9" placeholder="Cari supplier..." value={search} onChange={e => setSearch(e.target.value)} /></div>
         <Button onClick={() => setModal({ mode: 'add' })}><Plus className="h-4 w-4 mr-1" />Tambah</Button>
       </div>
       <Card>
-        <CardHeader><CardTitle className="text-base">Daftar Subcon ({filtered.length})</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-base">Daftar Supplier ({filtered.length})</CardTitle></CardHeader>
         <CardContent>
           <Table>
             <TableHeader><TableRow>
-              <TableHead>Nama</TableHead><TableHead>Wilayah</TableHead><TableHead>PIC</TableHead><TableHead>Jalur</TableHead><TableHead>Status</TableHead><TableHead>Aksi</TableHead>
+              <TableHead>Nama</TableHead><TableHead>Status</TableHead><TableHead>Aksi</TableHead>
             </TableRow></TableHeader>
             <TableBody>
-              {filtered.length === 0 ? <EmptyRow cols={6} /> : filtered.map(s => (
+              {filtered.length === 0 ? <EmptyRow cols={3} /> : filtered.map(s => (
                 <TableRow key={s.id}>
                   <TableCell className="font-medium">{s.name}</TableCell>
-                  <TableCell><Badge variant={(s.wilayah || '').toLowerCase() as any}>{s.wilayah}</Badge></TableCell>
-                  <TableCell><Badge variant="secondary">{s.pic}</Badge></TableCell>
-                  <TableCell><Badge variant={s.jalur === 'Impor' ? 'default' : 'success'}>{s.jalur}</Badge></TableCell>
                   <TableCell><StatusBadge aktif={s.aktif !== false} /></TableCell>
                   <TableCell><ActionButtons onEdit={() => setModal({ mode: 'edit', item: s })} onToggle={() => handleToggle(s.id)} onDelete={() => handleDelete(s.id)} aktif={s.aktif !== false} /></TableCell>
                 </TableRow>
@@ -631,23 +603,13 @@ function SubconTab() {
 }
 
 function SubconModal({ mode, item, onClose, onSave }: { mode: string; item?: any; onClose: () => void; onSave: (d: any) => void }) {
-  const [f, setF] = useState({ name: item?.name || '', wilayah: item?.wilayah || '', pic: item?.pic || '', jalur: item?.jalur || 'Lokal' });
+  const [f, setF] = useState({ name: item?.name || '', wilayah: item?.wilayah || 'Lokal', pic: item?.pic || 'RIGEN', jalur: item?.jalur || 'Lokal' });
   return (
-    <Modal title={mode === 'add' ? 'Tambah Subcon' : 'Edit Subcon'} onClose={onClose}>
-      <Field label="Nama"><Input value={f.name} onChange={e => setF({ ...f, name: e.target.value })} /></Field>
-      <Field label="Jalur">
-        <Select value={f.jalur} onChange={e => setF({ ...f, jalur: e.target.value })}><option value="Lokal">Lokal</option><option value="Impor">Impor</option></Select>
-      </Field>
-      <Field label="Wilayah">
-        <Select value={f.wilayah} onChange={e => setF({ ...f, wilayah: e.target.value })}>
-          <option value="">-- Pilih --</option>
-          {f.jalur === 'Impor' ? <option value="Impor">Impor</option> : <><option value="Jateng">Jateng</option><option value="Jatim">Jatim</option><option value="Jabar">Jabar</option></>}
-        </Select>
-      </Field>
-      <Field label="PIC"><Input value={f.pic} onChange={e => setF({ ...f, pic: e.target.value })} placeholder="RIGEN / PAKDE" /></Field>
+    <Modal title={mode === 'add' ? 'Tambah Supplier' : 'Edit Supplier'} onClose={onClose}>
+      <Field label="Nama Supplier"><Input value={f.name} onChange={e => setF({ ...f, name: e.target.value })} placeholder="Contoh: Regen" /></Field>
       <div className="flex justify-end gap-2 pt-2">
         <Button variant="outline" onClick={onClose}>Batal</Button>
-        <Button onClick={() => onSave({ ...f, ...(item?.id ? { id: item.id } : {}) })} disabled={!f.name || !f.wilayah}>Simpan</Button>
+        <Button onClick={() => onSave({ ...f, ...(item?.id ? { id: item.id } : {}) })} disabled={!f.name}>Simpan</Button>
       </div>
     </Modal>
   );
@@ -788,14 +750,12 @@ function PICTab() {
         <CardContent>
           <Table>
             <TableHeader><TableRow>
-              <TableHead>Kode</TableHead><TableHead>Nama</TableHead><TableHead>Telepon</TableHead><TableHead>Status</TableHead><TableHead>Aksi</TableHead>
+              <TableHead>Nama</TableHead><TableHead>Status</TableHead><TableHead>Aksi</TableHead>
             </TableRow></TableHeader>
             <TableBody>
-              {data.length === 0 ? <EmptyRow cols={5} /> : data.map(p => (
+              {data.length === 0 ? <EmptyRow cols={3} /> : data.map(p => (
                 <TableRow key={p.id}>
-                  <TableCell><Badge variant="default" className="font-mono">{p.kode_pic}</Badge></TableCell>
                   <TableCell className="font-medium">{p.nama_pic}</TableCell>
-                  <TableCell>{p.telepon || '-'}</TableCell>
                   <TableCell><StatusBadge aktif={p.aktif} /></TableCell>
                   <TableCell><ActionButtons onEdit={() => setModal({ mode: 'edit', item: p })} onToggle={() => handleToggle(p.id)} onDelete={() => handleDelete(p.id)} aktif={p.aktif} /></TableCell>
                 </TableRow>
@@ -810,15 +770,13 @@ function PICTab() {
 }
 
 function PICModal({ mode, item, onClose, onSave }: { mode: string; item?: any; onClose: () => void; onSave: (d: any) => void }) {
-  const [f, setF] = useState({ kode_pic: item?.kode_pic || '', nama_pic: item?.nama_pic || '', telepon: item?.telepon || '' });
+  const [f, setF] = useState({ kode_pic: item?.kode_pic || '', nama_pic: item?.nama_pic || '', telepon: '' });
   return (
     <Modal title={mode === 'add' ? 'Tambah PIC' : 'Edit PIC'} onClose={onClose}>
-      <Field label="Kode PIC"><Input value={f.kode_pic} onChange={e => setF({ ...f, kode_pic: e.target.value })} placeholder="Contoh: RIGEN" /></Field>
-      <Field label="Nama"><Input value={f.nama_pic} onChange={e => setF({ ...f, nama_pic: e.target.value })} /></Field>
-      <Field label="Telepon"><Input value={f.telepon} onChange={e => setF({ ...f, telepon: e.target.value })} placeholder="08xxx" /></Field>
+      <Field label="Nama PIC"><Input value={f.nama_pic} onChange={e => setF({ ...f, nama_pic: e.target.value, kode_pic: e.target.value.toUpperCase().replace(/\s+/g, '') })} placeholder="Contoh: Rigen" /></Field>
       <div className="flex justify-end gap-2 pt-2">
         <Button variant="outline" onClick={onClose}>Batal</Button>
-        <Button onClick={() => onSave({ ...f, ...(item?.id ? { id: item.id } : {}) })} disabled={!f.kode_pic || !f.nama_pic}>Simpan</Button>
+        <Button onClick={() => onSave({ ...f, ...(item?.id ? { id: item.id } : {}) })} disabled={!f.nama_pic}>Simpan</Button>
       </div>
     </Modal>
   );
