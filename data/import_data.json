@@ -5,6 +5,7 @@
     "opening_date": "2026-01-01",
     "transactions": []
   },
-  "raw_material": [],
-  "payments_ucup": []
+  "raw_materials": [],
+  "payments": [],
+  "balance_timeline": []
 }

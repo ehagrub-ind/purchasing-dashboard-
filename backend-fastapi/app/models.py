@@ -127,6 +127,7 @@ class Purchase(Base):
     price: Mapped[float] = mapped_column(Float, default=0)
     total: Mapped[float] = mapped_column(Float, default=0)
     kategori: Mapped[str] = mapped_column(String, default="Lainnya")
+    currency: Mapped[str] = mapped_column(String, default="IDR")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     supplier: Mapped["Supplier"] = relationship(back_populates="purchases")

@@ -288,9 +288,7 @@ function LokalTab({ data, filters, setFilters, reloadLocal, masterBahan, masterW
               onChange={(e) => handleFilter('kategori', e.target.value)}
             >
               <option value="">Semua Kategori</option>
-              {['R Salon', 'Uk 6-8 / Retul', 'Remy', 'Lus', 'Brangkas', 'Lainnya'].map((k) => (
-                <option key={k} value={k}>{k}</option>
-              ))}
+              <option value="Bahan Baku">Bahan Baku</option>
             </Select>
           </div>
         </CardContent>
@@ -392,8 +390,8 @@ function LocalTable({ data }: { data: any[] }) {
               <Badge variant={kategoriBahanVariant(p.kategori)}>{p.kategori}</Badge>
             </TableCell>
             <TableCell className="text-right">{kg(p.qty)}</TableCell>
-            <TableCell className="text-right">{rupiahFull(p.price)}</TableCell>
-            <TableCell className="text-right font-semibold">{rupiahFull(p.total)}</TableCell>
+            <TableCell className="text-right">{p.currency === 'USD' ? usd(p.price) : rupiahFull(p.price)}</TableCell>
+            <TableCell className="text-right font-semibold">{p.currency === 'USD' ? usd(p.total) : rupiahFull(p.total)}</TableCell>
           </TableRow>
         ))}
         {data.length === 0 && (
@@ -1083,11 +1081,16 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, master
 
   const filteredUkuran = masterUkuran
     .filter((u: any) => {
-      const code = parseInt(u.kode_ukuran);
-      if (isNaN(code)) return true;
       const j = form.jenis.toLowerCase();
-      if (j.includes('retul')) return code >= 7 && code <= 30;
-      if (j.includes('remy')) return code >= 10 && code <= 30 && code % 5 === 0;
+      const satuan = (u.satuan || '').toLowerCase();
+      if (j.includes('retul')) {
+        if (satuan !== 'inch') return false;
+        const code = parseInt(u.kode_ukuran);
+        return !isNaN(code) && code >= 7 && code <= 30;
+      }
+      if (j.includes('remy')) {
+        return satuan === 'cm';
+      }
       return true;
     })
     .sort((a: any, b: any) => parseInt(a.kode_ukuran) - parseInt(b.kode_ukuran));
@@ -1246,11 +1249,12 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, master
         date: form.date,
         supplierId: form.supplierId,
         petani: form.petani,
-        wilayah: form.wilayah || 'Impor',
+        wilayah: form.wilayah || 'India',
         jenis, kategori,
         qty: form.qty,
         price: form.price,
         deskripsi: desc,
+        currency: isImpor ? 'USD' : 'IDR',
       });
       setSuccess(true);
       setTimeout(() => onCreated(), 1500);

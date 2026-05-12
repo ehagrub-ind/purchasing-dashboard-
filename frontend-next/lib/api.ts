@@ -359,6 +359,8 @@ export const api = {
     return fetchJSON('/penjualan' + qs);
   },
   getPenjualanStats: () => fetchJSON('/penjualan/stats'),
+  getStok: () => fetchJSON('/penjualan/stok'),
+  getHargaBahan: () => fetchJSON('/penjualan/harga-bahan'),
   createPenjualan: async (data: any) => {
     const res = await fetch(`${BASE}/penjualan/`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
     if (!res.ok) throw new Error(`API ${res.status}`);

@@ -16,7 +16,7 @@ async def _ensure_columns(conn):
     def _check(sync_conn):
         insp = sa_inspect(sync_conn)
         result = {}
-        for tbl in ("suppliers", "purchases", "petani", "master_bahan", "user_team", "operasional", "fees"):
+        for tbl in ("suppliers", "purchases", "petani", "master_bahan", "user_team", "operasional", "fees", "penjualan"):
             result[tbl] = {c["name"] for c in insp.get_columns(tbl)} if insp.has_table(tbl) else set()
         return result
     existing = await conn.run_sync(_check)
@@ -37,6 +37,8 @@ async def _ensure_columns(conn):
         await conn.execute(text("ALTER TABLE operasional ADD COLUMN created_at TIMESTAMP DEFAULT NOW()"))
     if existing["fees"] and "date" not in existing["fees"]:
         await conn.execute(text("ALTER TABLE fees ADD COLUMN date TIMESTAMP DEFAULT NOW()"))
+    if existing["purchases"] and "currency" not in existing["purchases"]:
+        await conn.execute(text("ALTER TABLE purchases ADD COLUMN currency VARCHAR DEFAULT 'IDR'"))
 
 
 @asynccontextmanager
