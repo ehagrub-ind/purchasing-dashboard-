@@ -316,4 +316,62 @@ export const api = {
     if (!res.ok) throw new Error(`API ${res.status}`);
     return res.json();
   },
+
+  // Kas CRUD
+  createKas: async (data: any) => {
+    const res = await fetch(`${BASE}/kas/`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+    if (!res.ok) throw new Error(`API ${res.status}`);
+    return res.json();
+  },
+  deleteKas: async (id: number) => {
+    const res = await fetch(`${BASE}/kas/${id}/`, { method: 'DELETE' });
+    if (!res.ok) throw new Error(`API ${res.status}`);
+    return res.json();
+  },
+
+  // Operasional CRUD
+  createOperasional: async (data: any) => {
+    const res = await fetch(`${BASE}/operasional/`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+    if (!res.ok) throw new Error(`API ${res.status}`);
+    return res.json();
+  },
+  deleteOperasional: async (id: number) => {
+    const res = await fetch(`${BASE}/operasional/${id}/`, { method: 'DELETE' });
+    if (!res.ok) throw new Error(`API ${res.status}`);
+    return res.json();
+  },
+
+  // Fee CRUD
+  createFee: async (data: any) => {
+    const res = await fetch(`${BASE}/fees/`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+    if (!res.ok) throw new Error(`API ${res.status}`);
+    return res.json();
+  },
+  deleteFee: async (id: number) => {
+    const res = await fetch(`${BASE}/fees/${id}/`, { method: 'DELETE' });
+    if (!res.ok) throw new Error(`API ${res.status}`);
+    return res.json();
+  },
+
+  // Penjualan
+  getPenjualan: (params?: any) => {
+    const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+    return fetchJSON('/penjualan' + qs);
+  },
+  getPenjualanStats: () => fetchJSON('/penjualan/stats'),
+  createPenjualan: async (data: any) => {
+    const res = await fetch(`${BASE}/penjualan/`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+    if (!res.ok) throw new Error(`API ${res.status}`);
+    return res.json();
+  },
+  bayarPenjualan: async (id: number, nominal: number) => {
+    const res = await fetch(`${BASE}/penjualan/${id}/bayar/`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nominal }) });
+    if (!res.ok) throw new Error(`API ${res.status}`);
+    return res.json();
+  },
+  deletePenjualan: async (id: number) => {
+    const res = await fetch(`${BASE}/penjualan/${id}/`, { method: 'DELETE' });
+    if (!res.ok) throw new Error(`API ${res.status}`);
+    return res.json();
+  },
 };

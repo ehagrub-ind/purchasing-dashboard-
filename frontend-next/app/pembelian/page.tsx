@@ -39,6 +39,8 @@ export default function PembelianPage() {
   const [masterBahan, setMasterBahan] = useState<any[]>([]);
   const [masterUkuran, setMasterUkuran] = useState<any[]>([]);
   const [masterWarna, setMasterWarna] = useState<any[]>([]);
+  const [masterWilayah, setMasterWilayah] = useState<any[]>([]);
+  const [masterPIC, setMasterPIC] = useState<any[]>([]);
   const [error, setError] = useState('');
   const [filters, setFilters] = useState<Record<string, any>>({ page: 1 });
   const [showPOModal, setShowPOModal] = useState(false);
@@ -51,10 +53,13 @@ export default function PembelianPage() {
       api.getMasterBahan({ aktif: 'true' }),
       api.getUkuran({ aktif: 'true' }),
       api.getWarna({ aktif: 'true' }),
+      api.getWilayah({ aktif: 'true' }),
+      api.getPIC({ aktif: 'true' }),
     ])
-      .then(([local, imp, sup, mb, uk, wr]) => {
+      .then(([local, imp, sup, mb, uk, wr, wil, pic]) => {
         setLocalData(local); setImportData(imp); setSuppliers(sup);
         setMasterBahan(mb); setMasterUkuran(uk); setMasterWarna(wr);
+        setMasterWilayah(wil); setMasterPIC(pic);
       })
       .catch((e) => setError(e.message));
   }, []);
@@ -98,6 +103,8 @@ export default function PembelianPage() {
           masterBahan={masterBahan}
           masterUkuran={masterUkuran}
           masterWarna={masterWarna}
+          masterWilayah={masterWilayah}
+          masterPIC={masterPIC}
           onClose={() => setShowPOModal(false)}
           onCreated={handlePOCreated}
         />
@@ -108,7 +115,7 @@ export default function PembelianPage() {
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Pembelian Bahan Baku</h2>
           <p className="text-muted-foreground mt-1">
-            Pembelian lokal (Jatim, Jateng, Jabar) dan impor (India via Mr Islam &amp; Pak Ucup)
+            Pembelian lokal (Jawa Timur, Jawa Tengah, Jawa Barat, Sumatra) dan impor (India)
           </p>
         </div>
         <Button onClick={() => setShowPOModal(true)}>
@@ -121,7 +128,7 @@ export default function PembelianPage() {
       <Tabs value={mainTab} onValueChange={(v) => setMainTab(v as MainTab)}>
         <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-grid">
           <TabsTrigger value="semua">Semua Pembelian</TabsTrigger>
-          <TabsTrigger value="lokal">Lokal (Jatim/Jateng/Jabar)</TabsTrigger>
+          <TabsTrigger value="lokal">Lokal</TabsTrigger>
           <TabsTrigger value="impor">Impor (India)</TabsTrigger>
         </TabsList>
 
@@ -129,7 +136,7 @@ export default function PembelianPage() {
           <SemuaTab localData={localData} importData={importData} setMainTab={setMainTab} />
         </TabsContent>
         <TabsContent value="lokal">
-          <LokalTab data={localData} filters={filters} setFilters={setFilters} reloadLocal={reloadLocal} masterBahan={masterBahan} />
+          <LokalTab data={localData} filters={filters} setFilters={setFilters} reloadLocal={reloadLocal} masterBahan={masterBahan} masterWilayah={masterWilayah} />
         </TabsContent>
         <TabsContent value="impor">
           <ImporTab data={importData} />
@@ -242,7 +249,7 @@ function SemuaTab({ localData, importData, setMainTab }: any) {
    Lokal Tab — Filtered local purchases
    ============================================================ */
 
-function LokalTab({ data, filters, setFilters, reloadLocal, masterBahan }: any) {
+function LokalTab({ data, filters, setFilters, reloadLocal, masterBahan, masterWilayah }: any) {
   const handleFilter = (key: string, val: string) => {
     const f = { ...filters, [key]: val || undefined, page: 1 };
     setFilters(f);
@@ -261,11 +268,9 @@ function LokalTab({ data, filters, setFilters, reloadLocal, masterBahan }: any) 
               onChange={(e) => handleFilter('wilayah', e.target.value)}
             >
               <option value="">Semua Wilayah</option>
-              <optgroup label="── Jawa ──">
-                <option value="Jatim">Jatim</option>
-                <option value="Jateng">Jateng</option>
-                <option value="Jabar">Jabar</option>
-              </optgroup>
+              {(masterWilayah || []).filter((w: any) => w.nama_wilayah !== 'India').map((w: any) => (
+                <option key={w.id} value={w.nama_wilayah}>{w.nama_wilayah}</option>
+              ))}
             </Select>
             <Select
               className="sm:w-48"
@@ -351,10 +356,13 @@ function kategoriBahanVariant(k: string) {
 function LocalTable({ data }: { data: any[] }) {
   const wilayahVariant = (w: string) => {
     const lower = (w || '').toLowerCase();
-    if (lower === 'jatim') return 'jatim' as const;
-    if (lower === 'jateng') return 'jateng' as const;
-    if (lower === 'jabar') return 'jabar' as const;
-    return 'secondary' as const;
+    const map: Record<string, string> = {
+      'jawa timur': 'jawa timur', 'jatim': 'jawa timur',
+      'jawa tengah': 'jawa tengah', 'jateng': 'jawa tengah',
+      'jawa barat': 'jawa barat', 'jabar': 'jawa barat',
+      'sumatra': 'sumatra', 'india': 'india',
+    };
+    return (map[lower] || 'secondary') as any;
   };
 
   return (
@@ -963,8 +971,7 @@ function ImportSemuaTxn({ data }: { data: any }) {
    Buat PO Baru Modal
    ============================================================ */
 
-const KATEGORI_OPTIONS = ['R Salon', 'Uk 6-8 / Retul', 'Remy', 'Lus', 'Brangkas', 'Lainnya'];
-const WILAYAH_OPTIONS = ['Jatim', 'Jateng', 'Jabar'];
+const KATEGORI_OPTIONS = ['Bahan Baku'];
 
 type PastedRow = {
   jenis: string;
@@ -1035,11 +1042,13 @@ function parsePastedText(text: string, masterBahan: any[]): PastedRow[] {
   return rows;
 }
 
-function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, onClose, onCreated }: {
+function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, masterWilayah, masterPIC, onClose, onCreated }: {
   suppliers: any[];
   masterBahan: any[];
   masterUkuran: any[];
   masterWarna: any[];
+  masterWilayah: any[];
+  masterPIC: any[];
   onClose: () => void;
   onCreated: () => void;
 }) {
@@ -1085,7 +1094,8 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, onClos
 
   const lokalSuppliers = suppliers.filter((s: any) => (s.jalur || 'Lokal') === 'Lokal');
   const imporSuppliers = suppliers.filter((s: any) => s.jalur === 'Impor');
-  const uniquePics = [...new Set(lokalSuppliers.map((s: any) => s.pic).filter(Boolean))] as string[];
+  const picOptions = masterPIC.map((p: any) => p.nama_pic);
+  const wilayahOptions = masterWilayah.map((w: any) => w.nama_wilayah);
   const filteredSuppliers = form.pic
     ? lokalSuppliers.filter((s: any) => s.pic === form.pic)
     : lokalSuppliers;
@@ -1365,7 +1375,7 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, onClos
                       </div>
                       <div>
                         <p className="font-semibold text-sm">Lokal</p>
-                        <p className="text-xs text-muted-foreground">Jateng, Jatim, Jabar</p>
+                        <p className="text-xs text-muted-foreground">Jawa Timur, Jawa Tengah, Jawa Barat, Sumatra</p>
                       </div>
                     </button>
                     <button
@@ -1414,7 +1424,7 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, onClos
                       </label>
                       <Select value={form.pic} onChange={e => handlePicChange(e.target.value)}>
                         <option value="">-- Pilih PIC --</option>
-                        {uniquePics.map(p => (
+                        {picOptions.map(p => (
                           <option key={p} value={p}>{p}</option>
                         ))}
                       </Select>
@@ -1431,7 +1441,7 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, onClos
                         disabled={!form.pic}
                       >
                         <option value="">{form.pic ? '-- Pilih Supplier --' : '-- Pilih PIC dulu --'}</option>
-                        {WILAYAH_OPTIONS.map(w => {
+                        {wilayahOptions.map(w => {
                           const group = filteredSuppliers.filter((s: any) => s.wilayah === w);
                           if (group.length === 0) return null;
                           return (
@@ -1497,7 +1507,7 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, onClos
                         onChange={e => update('wilayah', e.target.value)}
                       >
                         <option value="">-- Otomatis dari supplier --</option>
-                        {WILAYAH_OPTIONS.map(w => (
+                        {wilayahOptions.map(w => (
                           <option key={w} value={w}>{w}</option>
                         ))}
                       </Select>
@@ -1680,9 +1690,6 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, onClos
                                   >
                                     <option value="">-</option>
                                     {KATEGORI_OPTIONS.map(k => <option key={k} value={k}>{k}</option>)}
-                                    <option value="Bahan Baku">Bahan Baku</option>
-                                    <option value="Bahan Proses">Bahan Proses</option>
-                                    <option value="Recycle/WIP">Recycle/WIP</option>
                                   </select>
                                 </TableCell>
                                 <TableCell className="text-right">
@@ -1803,9 +1810,6 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, onClos
                     {KATEGORI_OPTIONS.map(k => (
                       <option key={k} value={k}>{k}</option>
                     ))}
-                    <option value="Bahan Baku">Bahan Baku</option>
-                    <option value="Bahan Proses">Bahan Proses</option>
-                    <option value="Recycle/WIP">Recycle/WIP</option>
                   </Select>
                 </div>
 

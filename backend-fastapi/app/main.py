@@ -7,7 +7,7 @@ import os
 
 from .database import engine
 from .models import Base
-from .routers import overview, suppliers, purchases, payments, kas, operasional, fees, import_india, master_bahan, master_ukuran, master_warna, petani, wilayah, pic_master, user_team, piutang, hutang, arus_kas, auth
+from .routers import overview, suppliers, purchases, payments, kas, operasional, fees, import_india, master_bahan, master_ukuran, master_warna, petani, wilayah, pic_master, user_team, piutang, hutang, arus_kas, auth, penjualan
 
 
 async def _ensure_columns(conn):
@@ -16,7 +16,7 @@ async def _ensure_columns(conn):
     def _check(sync_conn):
         insp = sa_inspect(sync_conn)
         result = {}
-        for tbl in ("suppliers", "purchases", "petani", "master_bahan", "user_team"):
+        for tbl in ("suppliers", "purchases", "petani", "master_bahan", "user_team", "operasional", "fees"):
             result[tbl] = {c["name"] for c in insp.get_columns(tbl)} if insp.has_table(tbl) else set()
         return result
     existing = await conn.run_sync(_check)
@@ -32,6 +32,11 @@ async def _ensure_columns(conn):
         await conn.execute(text("ALTER TABLE purchases ADD COLUMN petani VARCHAR DEFAULT ''"))
     if existing["petani"] and "aktif" not in existing["petani"]:
         await conn.execute(text("ALTER TABLE petani ADD COLUMN aktif BOOLEAN DEFAULT TRUE"))
+    if existing["operasional"] and "date" not in existing["operasional"]:
+        await conn.execute(text("ALTER TABLE operasional ADD COLUMN date TIMESTAMP DEFAULT NOW()"))
+        await conn.execute(text("ALTER TABLE operasional ADD COLUMN created_at TIMESTAMP DEFAULT NOW()"))
+    if existing["fees"] and "date" not in existing["fees"]:
+        await conn.execute(text("ALTER TABLE fees ADD COLUMN date TIMESTAMP DEFAULT NOW()"))
 
 
 @asynccontextmanager
@@ -71,6 +76,7 @@ app.include_router(piutang.router, prefix="/api/piutang", tags=["piutang"])
 app.include_router(hutang.router, prefix="/api/hutang", tags=["hutang"])
 app.include_router(arus_kas.router, prefix="/api/arus-kas", tags=["arus-kas"])
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
+app.include_router(penjualan.router, prefix="/api/penjualan", tags=["penjualan"])
 
 
 @app.get("/api/health")

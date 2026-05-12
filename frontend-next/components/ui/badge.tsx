@@ -19,6 +19,11 @@ const badgeVariants = cva(
         jatim: "border-transparent bg-blue-100 text-blue-700",
         jateng: "border-transparent bg-emerald-100 text-emerald-700",
         jabar: "border-transparent bg-amber-100 text-amber-700",
+        "jawa timur": "border-transparent bg-blue-100 text-blue-700",
+        "jawa tengah": "border-transparent bg-emerald-100 text-emerald-700",
+        "jawa barat": "border-transparent bg-amber-100 text-amber-700",
+        sumatra: "border-transparent bg-orange-100 text-orange-700",
+        india: "border-transparent bg-violet-100 text-violet-700",
       },
     },
     defaultVariants: {

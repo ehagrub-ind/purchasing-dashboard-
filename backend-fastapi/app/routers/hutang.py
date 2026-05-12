@@ -151,7 +151,7 @@ async def bayar_hutang(supplier_id: int, body: dict, db: AsyncSession = Depends(
         wilayah=supplier.wilayah,
         deskripsi=body.get("keterangan", f"Pembayaran hutang ke {supplier.name}"),
         amount=float(body["nominal"]),
-        type="IN",
+        type="OUT",
     )
     db.add(payment)
     await db.commit()

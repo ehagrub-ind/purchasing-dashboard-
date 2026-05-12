@@ -154,24 +154,7 @@ async def seed():
             await db.commit()
             print(f"  Created {len(warna_data)} master warna entries")
 
-        pt_count = (await db.execute(select(func.count(Piutang.id)))).scalar()
-        if not pt_count or pt_count == 0:
-            piutang_data = [
-                {"tanggal": datetime(2026, 1, 15), "jatuh_tempo": datetime(2026, 3, 15), "pelanggan": "Pak Tarno", "keterangan": "Deposit bahan baku Remy Super", "jumlah": 15000, "terbayar": 15000, "status": "lunas", "wilayah": "Purbalingga", "kategori": "Deposit Subcon"},
-                {"tanggal": datetime(2026, 2, 1), "jatuh_tempo": datetime(2026, 4, 1), "pelanggan": "Bu Siti", "keterangan": "Deposit bahan baku Lus Panjang", "jumlah": 8500, "terbayar": 5000, "status": "sebagian", "wilayah": "Banjarnegara", "kategori": "Deposit Subcon"},
-                {"tanggal": datetime(2026, 2, 10), "jatuh_tempo": datetime(2026, 5, 10), "pelanggan": "Pak Joko", "keterangan": "Pinjaman modal kerja", "jumlah": 25000, "terbayar": 10000, "status": "sebagian", "wilayah": "Wonosobo", "kategori": "Pinjaman"},
-                {"tanggal": datetime(2026, 3, 5), "jatuh_tempo": datetime(2026, 6, 5), "pelanggan": "CV Rambut Indah", "keterangan": "Penjualan rambut kredit 30 hari", "jumlah": 45000, "terbayar": 0, "status": "belum_lunas", "wilayah": "Surabaya", "kategori": "Penjualan Kredit"},
-                {"tanggal": datetime(2026, 3, 12), "jatuh_tempo": datetime(2026, 4, 12), "pelanggan": "Pak Darto", "keterangan": "Deposit bahan baku Brangkas", "jumlah": 5000, "terbayar": 5000, "status": "lunas", "wilayah": "Tegal", "kategori": "Deposit Subcon"},
-                {"tanggal": datetime(2026, 3, 20), "jatuh_tempo": datetime(2026, 5, 20), "pelanggan": "UD Makmur Hair", "keterangan": "Penjualan Remy Biasa kredit", "jumlah": 32000, "terbayar": 16000, "status": "sebagian", "wilayah": "Bandung", "kategori": "Penjualan Kredit"},
-                {"tanggal": datetime(2026, 4, 1), "jatuh_tempo": datetime(2026, 5, 1), "pelanggan": "Pak Agus", "keterangan": "Deposit pembelian Kribo", "jumlah": 3500, "terbayar": 0, "status": "belum_lunas", "wilayah": "Cilacap", "kategori": "Deposit Subcon"},
-                {"tanggal": datetime(2026, 4, 8), "jatuh_tempo": datetime(2026, 7, 8), "pelanggan": "PT Hair Export", "keterangan": "Penjualan ekspor kredit 90 hari", "jumlah": 120000, "terbayar": 40000, "status": "sebagian", "wilayah": "Surabaya", "kategori": "Penjualan Kredit"},
-                {"tanggal": datetime(2026, 4, 15), "jatuh_tempo": datetime(2026, 5, 15), "pelanggan": "Pak Wahyu", "keterangan": "Pinjaman operasional lapangan", "jumlah": 7500, "terbayar": 0, "status": "belum_lunas", "wilayah": "Malang", "kategori": "Pinjaman"},
-                {"tanggal": datetime(2026, 4, 25), "jatuh_tempo": datetime(2026, 6, 25), "pelanggan": "Salon Cantik Abadi", "keterangan": "Penjualan Lus Pendek kredit", "jumlah": 12000, "terbayar": 0, "status": "belum_lunas", "wilayah": "Kediri", "kategori": "Penjualan Kredit"},
-            ]
-            for item in piutang_data:
-                db.add(Piutang(**item))
-            await db.commit()
-            print(f"  Created {len(piutang_data)} piutang entries")
+        # Piutang seed disabled — user manages data manually
 
         count = (await db.execute(select(func.count(Supplier.id)))).scalar()
         if count and count > 0:

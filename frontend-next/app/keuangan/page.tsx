@@ -14,9 +14,10 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
+import { Select } from '@/components/ui/select';
 import {
   ArrowDownCircle, ArrowUpCircle, Wallet, AlertTriangle,
-  ClipboardList, TrendingUp, Search, Download, Plus,
+  ClipboardList, TrendingUp, Search, Download, Plus, X,
   Info, CheckCircle2, XCircle, CreditCard, ArrowUpRight, ArrowDownRight,
 } from 'lucide-react';
 
@@ -127,16 +128,22 @@ export default function KeuanganPage() {
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState<TabId>('ringkasan');
   const [globalWilayah, setGlobalWilayah] = useState('');
+  const [showKasModal, setShowKasModal] = useState<'masuk' | 'keluar' | null>(null);
+  const [showOpModal, setShowOpModal] = useState(false);
+  const [masterWilayah, setMasterWilayah] = useState<any[]>([]);
 
-  useEffect(() => {
-    Promise.all([api.getKas(), api.getOperasional()])
-      .then(([kas, op]) => {
+  const loadData = () => {
+    Promise.all([api.getKas(), api.getOperasional(), api.getWilayah({ aktif: 'true' })])
+      .then(([kas, op, wil]) => {
         setKasData(kas.data); setOpData(op.data);
         setKasSummary(kas.summary); setOpSummary(op.summary);
+        setMasterWilayah(wil.data || []);
         setLoading(false);
       })
       .catch(e => { setError(e.message); setLoading(false); });
-  }, []);
+  };
+
+  useEffect(() => { loadData(); }, []);
 
   const filteredKas = useMemo(() => {
     if (!globalWilayah || globalWilayah.startsWith('__')) return kasData;
@@ -158,11 +165,10 @@ export default function KeuanganPage() {
   );
   if (loading) return <Loading />;
 
+  const wilayahNames = masterWilayah.map((w: any) => w.nama_wilayah);
   const pills = [
     { label: 'Semua', value: '' },
-    { label: 'Jabar', value: 'Jabar' },
-    { label: 'Jateng', value: 'Jateng' },
-    { label: 'Jatim', value: 'Jatim' },
+    ...wilayahNames.map((w: string) => ({ label: w, value: w })),
   ];
 
   return (
@@ -174,8 +180,8 @@ export default function KeuanganPage() {
           <p className="text-sm text-muted-foreground mt-0.5">Arus kas, pembayaran, dan saldo wilayah</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button size="sm"><Plus className="mr-1.5 h-4 w-4" />Input Masuk</Button>
-          <Button size="sm" variant="outline"><Plus className="mr-1.5 h-4 w-4" />Input Keluar</Button>
+          <Button size="sm" onClick={() => setShowKasModal('masuk')}><Plus className="mr-1.5 h-4 w-4" />Input Masuk</Button>
+          <Button size="sm" variant="outline" onClick={() => setShowKasModal('keluar')}><Plus className="mr-1.5 h-4 w-4" />Input Keluar</Button>
           <Button size="sm" variant="outline"><Download className="mr-1.5 h-4 w-4" />Export</Button>
         </div>
       </div>
@@ -262,13 +268,129 @@ export default function KeuanganPage() {
         </TabsList>
 
         <TabsContent value="ringkasan">
-          <RingkasanTab kasSummary={kasSummary} kasData={kasData} opData={opData} opSummary={opSummary} />
+          <RingkasanTab kasSummary={kasSummary} kasData={kasData} opData={opData} opSummary={opSummary} masterWilayah={masterWilayah} onReload={loadData} />
         </TabsContent>
         <TabsContent value="masuk"><TransaksiTab rows={filteredKas} type="masuk" /></TabsContent>
         <TabsContent value="keluar"><TransaksiTab rows={filteredKas} type="keluar" /></TabsContent>
         <TabsContent value="aruskas"><ArusKasTab rows={filteredKas} /></TabsContent>
         <TabsContent value="incomplete"><IncompleteTab kasData={kasData} globalWilayah={globalWilayah} /></TabsContent>
       </Tabs>
+
+      {showKasModal && (
+        <KasInputModal tipe={showKasModal} masterWilayah={masterWilayah} onClose={() => setShowKasModal(null)} onCreated={() => { setShowKasModal(null); loadData(); }} />
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════ Kas Input Modal ═══════════════ */
+
+function KasInputModal({ tipe, masterWilayah, onClose, onCreated }: { tipe: 'masuk' | 'keluar'; masterWilayah: any[]; onClose: () => void; onCreated: () => void }) {
+  const [form, setForm] = useState({ tanggal: new Date().toISOString().slice(0, 10), wilayah: '', deskripsi: '', nominal: '' });
+  const [saving, setSaving] = useState(false);
+  const update = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
+
+  const submit = async () => {
+    const nominal = parseFloat(form.nominal);
+    if (!form.wilayah || !nominal || nominal <= 0) return;
+    setSaving(true);
+    try {
+      await api.createKas({ tipe, tanggal: form.tanggal, wilayah: form.wilayah, deskripsi: form.deskripsi, nominal });
+      onCreated();
+    } catch { setSaving(false); }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-md rounded-2xl bg-background shadow-2xl">
+        <div className="flex items-center justify-between border-b px-6 py-4">
+          <h3 className="text-lg font-semibold">{tipe === 'masuk' ? 'Input Uang Masuk' : 'Input Uang Keluar'}</h3>
+          <button onClick={onClose} className="rounded-lg p-1.5 hover:bg-muted"><X className="h-5 w-5" /></button>
+        </div>
+        <div className="space-y-4 p-6">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium mb-1 block">Tanggal</label>
+              <Input type="date" value={form.tanggal} onChange={e => update('tanggal', e.target.value)} />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Wilayah</label>
+              <Select value={form.wilayah} onChange={e => update('wilayah', e.target.value)}>
+                <option value="">-- Pilih --</option>
+                {masterWilayah.map((w: any) => <option key={w.id} value={w.nama_wilayah}>{w.nama_wilayah}</option>)}
+              </Select>
+            </div>
+          </div>
+          <div>
+            <label className="text-sm font-medium mb-1 block">Deskripsi</label>
+            <Input placeholder="Keterangan transaksi..." value={form.deskripsi} onChange={e => update('deskripsi', e.target.value)} />
+          </div>
+          <div>
+            <label className="text-sm font-medium mb-1 block">Nominal (ribuan Rp)</label>
+            <Input type="number" placeholder="Contoh: 1000 = Rp 1.000.000" value={form.nominal} onChange={e => update('nominal', e.target.value)} />
+          </div>
+        </div>
+        <div className="flex justify-end gap-3 border-t px-6 py-4">
+          <Button variant="outline" onClick={onClose}>Batal</Button>
+          <Button onClick={submit} disabled={saving}>{saving ? 'Menyimpan...' : 'Simpan'}</Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════ Operasional Input Modal ═══════════════ */
+
+function OpInputModal({ masterWilayah, onClose, onCreated }: { masterWilayah: any[]; onClose: () => void; onCreated: () => void }) {
+  const [form, setForm] = useState({ tanggal: new Date().toISOString().slice(0, 10), wilayah: '', deskripsi: '', jumlah: '' });
+  const [saving, setSaving] = useState(false);
+  const update = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
+
+  const submit = async () => {
+    const jumlah = parseFloat(form.jumlah);
+    if (!form.wilayah || !jumlah || jumlah <= 0) return;
+    setSaving(true);
+    try {
+      await api.createOperasional({ tanggal: form.tanggal, wilayah: form.wilayah, deskripsi: form.deskripsi, jumlah });
+      onCreated();
+    } catch { setSaving(false); }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-md rounded-2xl bg-background shadow-2xl">
+        <div className="flex items-center justify-between border-b px-6 py-4">
+          <h3 className="text-lg font-semibold">Input Biaya Operasional</h3>
+          <button onClick={onClose} className="rounded-lg p-1.5 hover:bg-muted"><X className="h-5 w-5" /></button>
+        </div>
+        <div className="space-y-4 p-6">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium mb-1 block">Tanggal</label>
+              <Input type="date" value={form.tanggal} onChange={e => update('tanggal', e.target.value)} />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Wilayah</label>
+              <Select value={form.wilayah} onChange={e => update('wilayah', e.target.value)}>
+                <option value="">-- Pilih --</option>
+                {masterWilayah.map((w: any) => <option key={w.id} value={w.nama_wilayah}>{w.nama_wilayah}</option>)}
+              </Select>
+            </div>
+          </div>
+          <div>
+            <label className="text-sm font-medium mb-1 block">Deskripsi</label>
+            <Input placeholder="Transport, makan, dll..." value={form.deskripsi} onChange={e => update('deskripsi', e.target.value)} />
+          </div>
+          <div>
+            <label className="text-sm font-medium mb-1 block">Jumlah (ribuan Rp)</label>
+            <Input type="number" placeholder="Contoh: 500 = Rp 500.000" value={form.jumlah} onChange={e => update('jumlah', e.target.value)} />
+          </div>
+        </div>
+        <div className="flex justify-end gap-3 border-t px-6 py-4">
+          <Button variant="outline" onClick={onClose}>Batal</Button>
+          <Button onClick={submit} disabled={saving}>{saving ? 'Menyimpan...' : 'Simpan'}</Button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -296,8 +418,11 @@ function GradientKPI({ gradient, icon, label, value, sub, badge }: {
 
 /* ═══════════════ Tab: Ringkasan ═══════════════ */
 
-function RingkasanTab({ kasSummary, kasData, opData, opSummary }: any) {
+function RingkasanTab({ kasSummary, kasData, opData, opSummary, masterWilayah, onReload }: any) {
   const chartRef = useRef<Chart | null>(null);
+  const [opLimit, setOpLimit] = useState(10);
+  const [opSearch, setOpSearch] = useState('');
+  const [showOpModal, setShowOpModal] = useState(false);
 
   useEffect(() => {
     chartRef.current?.destroy();
@@ -456,29 +581,64 @@ function RingkasanTab({ kasSummary, kasData, opData, opSummary }: any) {
               <CardTitle className="text-[15px] font-semibold">Biaya Operasional</CardTitle>
               <CardDescription className="text-xs">{opData.length} transaksi — Total: {rpShort(totalOp)}</CardDescription>
             </div>
+            <Button size="sm" onClick={() => setShowOpModal(true)}><Plus className="mr-1.5 h-4 w-4" />Input</Button>
+          </div>
+          <div className="flex items-center justify-between gap-3 pt-2">
+            <div className="relative flex-1 max-w-xs">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/60" />
+              <Input placeholder="Cari keterangan..." value={opSearch} onChange={e => setOpSearch(e.target.value)}
+                className="pl-9 bg-muted/50 border-0 h-9 text-sm" />
+            </div>
+            <div className="flex items-center gap-1">
+              {[10, 25, 50, 0].map(n => (
+                <button key={n} onClick={() => setOpLimit(n)}
+                  className={cn('px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
+                    opLimit === n ? 'bg-primary text-primary-foreground' : 'bg-muted/60 text-muted-foreground hover:bg-muted')}>
+                  {n === 0 ? 'Semua' : n}
+                </button>
+              ))}
+            </div>
           </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow className="hover:bg-transparent border-b-2">
-                <TableHead className={TH}>Wilayah</TableHead>
-                <TableHead className={TH}>Keterangan</TableHead>
-                <TableHead className={cn(TH, 'text-right')}>Jumlah</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {opData.map((o: any, i: number) => (
-                <TableRow key={i} className="hover:bg-muted/30">
-                  <TableCell><WilayahBadge w={o.wilayah} /></TableCell>
-                  <TableCell className="text-sm">{o.deskripsi}</TableCell>
-                  <TableCell className="text-right font-semibold text-sm tabular-nums">{rupiahFull(o.jumlah)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          {(() => {
+            let filtered = opData;
+            if (opSearch) filtered = filtered.filter((o: any) => (o.deskripsi || '').toLowerCase().includes(opSearch.toLowerCase()));
+            const shown = opLimit > 0 ? filtered.slice(0, opLimit) : filtered;
+            return (
+              <>
+                <Table>
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent border-b-2">
+                      <TableHead className={TH}>Wilayah</TableHead>
+                      <TableHead className={TH}>Keterangan</TableHead>
+                      <TableHead className={cn(TH, 'text-right')}>Jumlah</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {shown.map((o: any, i: number) => (
+                      <TableRow key={i} className="hover:bg-muted/30">
+                        <TableCell><WilayahBadge w={o.wilayah} /></TableCell>
+                        <TableCell className="text-sm">{o.deskripsi}</TableCell>
+                        <TableCell className="text-right font-semibold text-sm tabular-nums">{rupiahFull(o.jumlah)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                {opLimit > 0 && filtered.length > opLimit && (
+                  <p className="text-center text-xs text-muted-foreground pt-3">
+                    Menampilkan {opLimit} dari {filtered.length} transaksi
+                  </p>
+                )}
+              </>
+            );
+          })()}
         </CardContent>
       </Card>
+
+      {showOpModal && (
+        <OpInputModal masterWilayah={masterWilayah || []} onClose={() => setShowOpModal(false)} onCreated={() => { setShowOpModal(false); onReload(); }} />
+      )}
     </div>
   );
 }

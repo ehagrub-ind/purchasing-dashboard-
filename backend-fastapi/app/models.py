@@ -171,9 +171,11 @@ class Operasional(Base):
     __table_args__ = (Index("ix_operasional_wilayah", "wilayah"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    date: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     wilayah: Mapped[str] = mapped_column(String)
     deskripsi: Mapped[str] = mapped_column(String, default="")
     jumlah: Mapped[float] = mapped_column(Float, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
 class Piutang(Base):
@@ -205,10 +207,34 @@ class Fee(Base):
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    date: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     partai: Mapped[int] = mapped_column(Integer)
     wilayah: Mapped[str] = mapped_column(String)
     kategori: Mapped[str] = mapped_column(String)
     qty: Mapped[float] = mapped_column(Float, default=0)
     fee: Mapped[float] = mapped_column(Float, default=0)
     total: Mapped[float] = mapped_column(Float, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class Penjualan(Base):
+    __tablename__ = "penjualan"
+    __table_args__ = (
+        Index("ix_penjualan_customer", "customer"),
+        Index("ix_penjualan_date", "date"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    date: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    customer: Mapped[str] = mapped_column(String, default="PT Indo Hair Corp")
+    jenis: Mapped[str] = mapped_column(String, default="")
+    kategori: Mapped[str] = mapped_column(String, default="Bahan Baku")
+    qty: Mapped[float] = mapped_column(Float, default=0)
+    harga_beli: Mapped[float] = mapped_column(Float, default=0)
+    margin_pct: Mapped[float] = mapped_column(Float, default=5.0)
+    harga_jual: Mapped[float] = mapped_column(Float, default=0)
+    total: Mapped[float] = mapped_column(Float, default=0)
+    terbayar: Mapped[float] = mapped_column(Float, default=0)
+    status: Mapped[str] = mapped_column(String, default="belum_lunas")
+    keterangan: Mapped[str] = mapped_column(String, default="")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
