@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { api } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
+import { rupiahFull, fmtDate, kg } from '@/lib/format';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -13,7 +15,7 @@ import {
   User, Bell, Palette, Shield, Save, Check,
   Mail, Phone, MapPin, Building2, Eye, EyeOff,
   Plus, Pencil, Trash2, X, Users, Loader2,
-  Database, AlertTriangle,
+  Database, AlertTriangle, Lock, ShoppingCart, CreditCard, Search,
 } from 'lucide-react';
 
 const ROLE_COLORS: Record<string, string> = {
@@ -577,78 +579,251 @@ function KeamananTab() {
 }
 
 function DataTab() {
-  const [deleting, setDeleting] = useState<string | null>(null);
-  const [result, setResult] = useState<{ type: string; count: number } | null>(null);
+  const { user } = useAuth();
+  const isOwner = user?.role === 'Owner';
+  const [subTab, setSubTab] = useState<'pembelian' | 'hutang'>('pembelian');
+  const [purchases, setPurchases] = useState<any[]>([]);
+  const [payments, setPayments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [clearingAll, setClearingAll] = useState(false);
+  const [search, setSearch] = useState('');
+  const [toast, setToast] = useState('');
 
-  async function handleClear(type: 'purchases' | 'payments') {
-    const label = type === 'purchases' ? 'history pembelian' : 'history hutang (pembayaran)';
-    const confirmText = prompt(`Ketik "${type === 'purchases' ? 'HAPUS PEMBELIAN' : 'HAPUS HUTANG'}" untuk konfirmasi hapus semua ${label}:`);
-    if (confirmText !== (type === 'purchases' ? 'HAPUS PEMBELIAN' : 'HAPUS HUTANG')) return;
-
-    setDeleting(type);
-    setResult(null);
+  const loadPurchases = useCallback(async () => {
+    setLoading(true);
     try {
-      const res = type === 'purchases' ? await api.clearPurchases() : await api.clearPayments();
-      setResult({ type: label, count: res.deleted });
+      const res = await api.getPurchases({ limit: '500' });
+      setPurchases(res.data || []);
     } catch { }
-    setDeleting(null);
+    setLoading(false);
+  }, []);
+
+  const loadPayments = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await api.getPayments({ limit: '500' });
+      setPayments(res.data || []);
+    } catch { }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    if (subTab === 'pembelian') loadPurchases();
+    else loadPayments();
+  }, [subTab, loadPurchases, loadPayments]);
+
+  function showToast(msg: string) {
+    setToast(msg);
+    setTimeout(() => setToast(''), 3000);
   }
 
-  return (
-    <div className="grid gap-6 lg:grid-cols-2">
-      <Card className="border-destructive/30">
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 text-destructive" />
-            Hapus History Pembelian
-          </CardTitle>
-          <CardDescription>Hapus semua data pembelian (PO) dari database. Data supplier tetap aman.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground mb-4">
-            Aksi ini akan menghapus seluruh record pembelian. Data tidak bisa dikembalikan.
-          </p>
-          <Button
-            variant="destructive"
-            onClick={() => handleClear('purchases')}
-            disabled={deleting === 'purchases'}
-          >
-            {deleting === 'purchases' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
-            Hapus Semua Pembelian
-          </Button>
-        </CardContent>
-      </Card>
+  async function handleDeletePurchase(id: number) {
+    if (!confirm('Hapus data pembelian ini?')) return;
+    setDeletingId(id);
+    try {
+      await api.deletePurchase(id);
+      setPurchases(p => p.filter(x => x.id !== id));
+      showToast('1 pembelian dihapus');
+    } catch { }
+    setDeletingId(null);
+  }
 
-      <Card className="border-destructive/30">
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 text-destructive" />
-            Hapus History Hutang
-          </CardTitle>
-          <CardDescription>Hapus semua data pembayaran hutang ke supplier. Data pembelian tetap aman.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground mb-4">
-            Aksi ini akan menghapus seluruh record pembayaran. Saldo hutang akan kembali ke total pembelian.
-          </p>
-          <Button
-            variant="destructive"
-            onClick={() => handleClear('payments')}
-            disabled={deleting === 'payments'}
-          >
-            {deleting === 'payments' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
-            Hapus Semua Hutang
-          </Button>
-        </CardContent>
-      </Card>
+  async function handleDeletePayment(id: number) {
+    if (!confirm('Hapus data pembayaran ini?')) return;
+    setDeletingId(id);
+    try {
+      await api.deletePayment(id);
+      setPayments(p => p.filter(x => x.id !== id));
+      showToast('1 pembayaran dihapus');
+    } catch { }
+    setDeletingId(null);
+  }
 
-      {result && (
-        <Card className="lg:col-span-2 border-green-200 bg-green-50">
-          <CardContent className="py-4">
-            <p className="text-sm text-green-700 flex items-center gap-2">
-              <Check className="h-4 w-4" />
-              Berhasil menghapus {result.count} record {result.type}.
+  async function handleClearAll() {
+    const label = subTab === 'pembelian' ? 'HAPUS SEMUA PEMBELIAN' : 'HAPUS SEMUA HUTANG';
+    const confirmText = prompt(`Ketik "${label}" untuk konfirmasi:`);
+    if (confirmText !== label) return;
+    setClearingAll(true);
+    try {
+      if (subTab === 'pembelian') {
+        const res = await api.clearPurchases();
+        setPurchases([]);
+        showToast(`${res.deleted} pembelian dihapus`);
+      } else {
+        const res = await api.clearPayments();
+        setPayments([]);
+        showToast(`${res.deleted} pembayaran dihapus`);
+      }
+    } catch { }
+    setClearingAll(false);
+  }
+
+  if (!isOwner) {
+    return (
+      <Card>
+        <CardContent className="py-16">
+          <div className="flex flex-col items-center text-center gap-3">
+            <Lock className="h-12 w-12 text-muted-foreground/40" />
+            <h3 className="text-lg font-semibold">Akses Terbatas</h3>
+            <p className="text-sm text-muted-foreground max-w-md">
+              Hanya akun dengan role <span className="font-semibold text-amber-600">Owner</span> yang dapat mengelola dan menghapus data.
             </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const filteredPurchases = purchases.filter(p => {
+    if (!search) return true;
+    const s = search.toLowerCase();
+    return (p.supplier?.name || '').toLowerCase().includes(s)
+      || (p.deskripsi || '').toLowerCase().includes(s)
+      || (p.wilayah || '').toLowerCase().includes(s);
+  });
+
+  const filteredPayments = payments.filter(p => {
+    if (!search) return true;
+    const s = search.toLowerCase();
+    return (p.supplier?.name || '').toLowerCase().includes(s)
+      || (p.deskripsi || '').toLowerCase().includes(s)
+      || (p.wilayah || '').toLowerCase().includes(s);
+  });
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex gap-2">
+          <Button
+            variant={subTab === 'pembelian' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => { setSubTab('pembelian'); setSearch(''); }}
+          >
+            <ShoppingCart className="mr-2 h-4 w-4" />
+            Pembelian ({purchases.length})
+          </Button>
+          <Button
+            variant={subTab === 'hutang' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => { setSubTab('hutang'); setSearch(''); }}
+          >
+            <CreditCard className="mr-2 h-4 w-4" />
+            Hutang ({payments.length})
+          </Button>
+        </div>
+        <div className="flex gap-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Cari supplier, deskripsi..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="pl-9 w-64"
+            />
+          </div>
+          <Button variant="destructive" size="sm" onClick={handleClearAll} disabled={clearingAll}>
+            {clearingAll ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <AlertTriangle className="mr-2 h-4 w-4" />}
+            Hapus Semua
+          </Button>
+        </div>
+      </div>
+
+      {toast && (
+        <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3">
+          <p className="text-sm text-green-700 flex items-center gap-2">
+            <Check className="h-4 w-4" />{toast}
+          </p>
+        </div>
+      )}
+
+      {loading ? (
+        <div className="flex items-center justify-center py-16 gap-3 text-muted-foreground">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          <span>Memuat data...</span>
+        </div>
+      ) : subTab === 'pembelian' ? (
+        <Card>
+          <CardContent className="p-0">
+            <div className="overflow-auto max-h-[500px]">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/50 sticky top-0">
+                  <tr>
+                    <th className="text-left px-4 py-3 font-medium">Tanggal</th>
+                    <th className="text-left px-4 py-3 font-medium">Supplier</th>
+                    <th className="text-left px-4 py-3 font-medium">Deskripsi</th>
+                    <th className="text-left px-4 py-3 font-medium">Wilayah</th>
+                    <th className="text-right px-4 py-3 font-medium">Qty</th>
+                    <th className="text-right px-4 py-3 font-medium">Total</th>
+                    <th className="text-center px-4 py-3 font-medium w-16">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {filteredPurchases.length === 0 ? (
+                    <tr><td colSpan={7} className="text-center py-8 text-muted-foreground">Tidak ada data pembelian</td></tr>
+                  ) : filteredPurchases.map(p => (
+                    <tr key={p.id} className="hover:bg-accent/50 transition-colors">
+                      <td className="px-4 py-2.5">{fmtDate(p.date)}</td>
+                      <td className="px-4 py-2.5 font-medium">{p.supplier?.name || '-'}</td>
+                      <td className="px-4 py-2.5 text-muted-foreground">{p.deskripsi}</td>
+                      <td className="px-4 py-2.5">{p.wilayah}</td>
+                      <td className="px-4 py-2.5 text-right">{kg(p.qty)}</td>
+                      <td className="px-4 py-2.5 text-right">{rupiahFull(p.total)}</td>
+                      <td className="px-4 py-2.5 text-center">
+                        <Button
+                          variant="ghost" size="sm"
+                          onClick={() => handleDeletePurchase(p.id)}
+                          disabled={deletingId === p.id}
+                        >
+                          {deletingId === p.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5 text-destructive" />}
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardContent className="p-0">
+            <div className="overflow-auto max-h-[500px]">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/50 sticky top-0">
+                  <tr>
+                    <th className="text-left px-4 py-3 font-medium">Tanggal</th>
+                    <th className="text-left px-4 py-3 font-medium">Supplier</th>
+                    <th className="text-left px-4 py-3 font-medium">Deskripsi</th>
+                    <th className="text-left px-4 py-3 font-medium">Wilayah</th>
+                    <th className="text-right px-4 py-3 font-medium">Nominal</th>
+                    <th className="text-center px-4 py-3 font-medium w-16">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {filteredPayments.length === 0 ? (
+                    <tr><td colSpan={6} className="text-center py-8 text-muted-foreground">Tidak ada data pembayaran</td></tr>
+                  ) : filteredPayments.map(p => (
+                    <tr key={p.id} className="hover:bg-accent/50 transition-colors">
+                      <td className="px-4 py-2.5">{fmtDate(p.date)}</td>
+                      <td className="px-4 py-2.5 font-medium">{p.supplier?.name || '-'}</td>
+                      <td className="px-4 py-2.5 text-muted-foreground">{p.deskripsi}</td>
+                      <td className="px-4 py-2.5">{p.wilayah}</td>
+                      <td className="px-4 py-2.5 text-right">{rupiahFull(p.amount)}</td>
+                      <td className="px-4 py-2.5 text-center">
+                        <Button
+                          variant="ghost" size="sm"
+                          onClick={() => handleDeletePayment(p.id)}
+                          disabled={deletingId === p.id}
+                        >
+                          {deletingId === p.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5 text-destructive" />}
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </CardContent>
         </Card>
       )}

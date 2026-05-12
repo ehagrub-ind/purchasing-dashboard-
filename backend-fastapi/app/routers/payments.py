@@ -52,3 +52,13 @@ async def list_payments(
             "pages": math.ceil(total / limit) if total else 0,
         },
     }
+
+
+@router.delete("/{payment_id}/")
+async def delete_payment(payment_id: int, db: AsyncSession = Depends(get_db)):
+    row = (await db.execute(select(Payment).where(Payment.id == payment_id))).scalar_one_or_none()
+    if not row:
+        return {"error": "not found"}
+    await db.delete(row)
+    await db.commit()
+    return {"deleted": payment_id}

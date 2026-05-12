@@ -88,6 +88,16 @@ async def delete_all_purchases(db: AsyncSession = Depends(get_db)):
     return {"deleted": count}
 
 
+@router.delete("/{purchase_id}/")
+async def delete_purchase(purchase_id: int, db: AsyncSession = Depends(get_db)):
+    row = (await db.execute(select(Purchase).where(Purchase.id == purchase_id))).scalar_one_or_none()
+    if not row:
+        return {"error": "not found"}
+    await db.delete(row)
+    await db.commit()
+    return {"deleted": purchase_id}
+
+
 @router.post("/", status_code=201)
 async def create_purchase(body: dict, db: AsyncSession = Depends(get_db)):
     qty = float(body["qty"])
