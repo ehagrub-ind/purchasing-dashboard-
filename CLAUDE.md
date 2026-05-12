@@ -110,12 +110,89 @@ docker compose up -d --build frontend
 docker compose logs -f backend
 docker compose logs -f frontend
 
-# Reset database (hapus volume)
+# Reset database (hapus volume — ⚠️ DATA HILANG)
 docker compose down -v && docker compose up -d --build
 
 # Health check
 curl http://localhost:4100/api/health
 ```
+
+---
+
+## Troubleshooting — Kalau Project Crash
+
+### Step 1: Cek Status Container
+
+```bash
+docker compose ps
+```
+
+Pastikan semua container **Up** / **Healthy**. Kalau ada yang **Restarting** atau **Exit**, lanjut step 2.
+
+### Step 2: Cek Log Error
+
+```bash
+# Backend error (Python/FastAPI)
+docker compose logs --tail=50 backend
+
+# Frontend error (Next.js)
+docker compose logs --tail=50 frontend
+
+# Database error
+docker compose logs --tail=50 db
+```
+
+### Step 3: Restart (Tanpa Rebuild)
+
+```bash
+docker compose restart
+```
+
+### Step 4: Rebuild (Kalau Restart Tidak Cukup)
+
+```bash
+docker compose up -d --build
+```
+
+### Step 5: Fix Migration / Kolom Database Error
+
+Kalau error seperti `column "xxx" does not exist` atau `_ensure_columns`:
+
+```bash
+docker compose exec backend python -c "
+from app.database import engine
+from app.models import Base
+import asyncio
+async def fix():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+asyncio.run(fix())
+"
+```
+
+### Step 6: Pull Latest + Rebuild (VPS)
+
+```bash
+git pull origin main && docker compose up -d --build
+```
+
+### Step 7: Reset Total (⚠️ TERAKHIR — DATA HILANG)
+
+```bash
+docker compose down -v && docker compose up -d --build
+```
+
+### Common Errors
+
+| Error | Penyebab | Solusi |
+|-------|----------|--------|
+| `502 Bad Gateway` | Backend belum ready | Tunggu 10 detik, cek `docker compose logs backend` |
+| `Cannot read properties of undefined` | API response format berubah | Cek frontend console, pastikan API return format benar |
+| `column does not exist` | Model baru belum migrasi | Jalankan Step 5 |
+| `relation does not exist` | Tabel belum dibuat | Jalankan Step 5 |
+| `port already in use` | Container lama masih jalan | `docker compose down && docker compose up -d --build` |
+| Frontend blank/loading terus | Build cache stale | `docker compose up -d --build frontend` |
+| `ECONNREFUSED` ke backend | Backend crash | Cek log backend (Step 2), lalu rebuild (Step 4) |
 
 ---
 
