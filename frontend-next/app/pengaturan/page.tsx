@@ -13,6 +13,7 @@ import {
   User, Bell, Palette, Shield, Save, Check,
   Mail, Phone, MapPin, Building2, Eye, EyeOff,
   Plus, Pencil, Trash2, X, Users, Loader2,
+  Database, AlertTriangle,
 } from 'lucide-react';
 
 const ROLE_COLORS: Record<string, string> = {
@@ -83,6 +84,7 @@ export default function PengaturanPage() {
           <TabsTrigger value="notifikasi"><Bell className="mr-2 h-4 w-4" />Notifikasi</TabsTrigger>
           <TabsTrigger value="tampilan"><Palette className="mr-2 h-4 w-4" />Tampilan</TabsTrigger>
           <TabsTrigger value="keamanan"><Shield className="mr-2 h-4 w-4" />Keamanan</TabsTrigger>
+          <TabsTrigger value="data"><Database className="mr-2 h-4 w-4" />Data</TabsTrigger>
         </TabsList>
 
         <TabsContent value="profil">
@@ -99,6 +101,9 @@ export default function PengaturanPage() {
         </TabsContent>
         <TabsContent value="keamanan">
           <KeamananTab />
+        </TabsContent>
+        <TabsContent value="data">
+          <DataTab />
         </TabsContent>
       </Tabs>
     </div>
@@ -567,6 +572,86 @@ function KeamananTab() {
           ))}
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+function DataTab() {
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [result, setResult] = useState<{ type: string; count: number } | null>(null);
+
+  async function handleClear(type: 'purchases' | 'payments') {
+    const label = type === 'purchases' ? 'history pembelian' : 'history hutang (pembayaran)';
+    const confirmText = prompt(`Ketik "${type === 'purchases' ? 'HAPUS PEMBELIAN' : 'HAPUS HUTANG'}" untuk konfirmasi hapus semua ${label}:`);
+    if (confirmText !== (type === 'purchases' ? 'HAPUS PEMBELIAN' : 'HAPUS HUTANG')) return;
+
+    setDeleting(type);
+    setResult(null);
+    try {
+      const res = type === 'purchases' ? await api.clearPurchases() : await api.clearPayments();
+      setResult({ type: label, count: res.deleted });
+    } catch { }
+    setDeleting(null);
+  }
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-2">
+      <Card className="border-destructive/30">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-destructive" />
+            Hapus History Pembelian
+          </CardTitle>
+          <CardDescription>Hapus semua data pembelian (PO) dari database. Data supplier tetap aman.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground mb-4">
+            Aksi ini akan menghapus seluruh record pembelian. Data tidak bisa dikembalikan.
+          </p>
+          <Button
+            variant="destructive"
+            onClick={() => handleClear('purchases')}
+            disabled={deleting === 'purchases'}
+          >
+            {deleting === 'purchases' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+            Hapus Semua Pembelian
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card className="border-destructive/30">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-destructive" />
+            Hapus History Hutang
+          </CardTitle>
+          <CardDescription>Hapus semua data pembayaran hutang ke supplier. Data pembelian tetap aman.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground mb-4">
+            Aksi ini akan menghapus seluruh record pembayaran. Saldo hutang akan kembali ke total pembelian.
+          </p>
+          <Button
+            variant="destructive"
+            onClick={() => handleClear('payments')}
+            disabled={deleting === 'payments'}
+          >
+            {deleting === 'payments' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+            Hapus Semua Hutang
+          </Button>
+        </CardContent>
+      </Card>
+
+      {result && (
+        <Card className="lg:col-span-2 border-green-200 bg-green-50">
+          <CardContent className="py-4">
+            <p className="text-sm text-green-700 flex items-center gap-2">
+              <Check className="h-4 w-4" />
+              Berhasil menghapus {result.count} record {result.type}.
+            </p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

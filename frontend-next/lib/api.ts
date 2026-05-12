@@ -257,6 +257,18 @@ export const api = {
   },
   getArusKasStats: () => fetchJSON('/arus-kas/stats'),
 
+  // Clear Data
+  clearPurchases: async () => {
+    const res = await fetch(`${BASE}/hutang/clear-purchases/`, { method: 'DELETE' });
+    if (!res.ok) throw new Error(`API ${res.status}`);
+    return res.json();
+  },
+  clearPayments: async () => {
+    const res = await fetch(`${BASE}/hutang/clear-payments/`, { method: 'DELETE' });
+    if (!res.ok) throw new Error(`API ${res.status}`);
+    return res.json();
+  },
+
   // Hutang
   getHutang: () => fetchJSON('/hutang'),
   getHutangStats: () => fetchJSON('/hutang/stats'),

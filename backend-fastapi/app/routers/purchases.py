@@ -79,6 +79,15 @@ async def purchase_stats(db: AsyncSession = Depends(get_db)):
     return {"by_supplier": [dict(r) for r in by_supplier], "by_month": [dict(r) for r in by_month]}
 
 
+@router.delete("/all/")
+async def delete_all_purchases(db: AsyncSession = Depends(get_db)):
+    from sqlalchemy import delete as sql_delete
+    count = (await db.execute(select(func.count(Purchase.id)))).scalar() or 0
+    await db.execute(sql_delete(Purchase))
+    await db.commit()
+    return {"deleted": count}
+
+
 @router.post("/", status_code=201)
 async def create_purchase(body: dict, db: AsyncSession = Depends(get_db)):
     qty = float(body["qty"])

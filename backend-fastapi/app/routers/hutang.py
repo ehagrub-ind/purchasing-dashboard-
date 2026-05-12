@@ -43,6 +43,24 @@ async def list_hutang(db: AsyncSession = Depends(get_db)):
     return {"data": [dict(r) for r in rows]}
 
 
+@router.delete("/clear-purchases/")
+async def clear_all_purchases(db: AsyncSession = Depends(get_db)):
+    from sqlalchemy import delete as sql_delete, func
+    count = (await db.execute(select(func.count(Purchase.id)))).scalar() or 0
+    await db.execute(sql_delete(Purchase))
+    await db.commit()
+    return {"deleted": count, "type": "purchases"}
+
+
+@router.delete("/clear-payments/")
+async def clear_all_payments(db: AsyncSession = Depends(get_db)):
+    from sqlalchemy import delete as sql_delete, func
+    count = (await db.execute(select(func.count(Payment.id)))).scalar() or 0
+    await db.execute(sql_delete(Payment))
+    await db.commit()
+    return {"deleted": count, "type": "payments"}
+
+
 @router.get("/stats/")
 async def hutang_stats(db: AsyncSession = Depends(get_db)):
     row = (await db.execute(text("""
