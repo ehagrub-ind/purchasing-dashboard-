@@ -125,11 +125,17 @@ curl http://localhost:4100/api/health
 |-------|-------|------------|
 | Supplier | suppliers | name (unique), wilayah |
 | MasterBahan | master_bahan | kode_bahan (unique), nama_bahan, kategori_bahan, satuan, aktif |
-| Purchase | purchases | date, supplier_id (FK), wilayah, jenis, kategori, qty, price, total |
+| Purchase | purchases | date, supplier_id (FK), wilayah, jenis, kategori, qty, price, total, currency |
 | Payment | payments | date, supplier_id (FK), wilayah, amount, type (IN/OUT) |
 | Kas | kas | date, wilayah, masuk, keluar, balance |
-| Operasional | operasional | wilayah, deskripsi, jumlah |
-| Fee | fees | partai, wilayah, kategori, qty, fee, total |
+| Operasional | operasional | date, wilayah, deskripsi, jumlah |
+| Fee | fees | date, partai, wilayah, kategori, qty, fee, total |
+| Penjualan | penjualan | date, customer, jenis, kategori, qty, harga_beli, margin_pct, harga_jual, total, terbayar, status, keterangan |
+| Wilayah | wilayah | kode_wilayah, nama_wilayah, provinsi, pic, aktif |
+| PIC | pic | kode_pic, nama_pic, telepon, aktif |
+| MasterUkuran | master_ukuran | kode_ukuran, nama_ukuran, satuan, aktif |
+| MasterWarna | master_warna | kode_warna, nama_warna, aktif |
+| Petani | petani | nama, supplier_id (FK), wilayah |
 
 **Auto-create**: Tabel dibuat otomatis via `Base.metadata.create_all` di lifespan.
 **Auto-seed**: `seed.py` jalan di startup, cek count sebelum insert.
@@ -143,22 +149,32 @@ Semua endpoint prefix `/api/`. Backend routes HARUS pakai trailing slash (`/stat
 | Method | Path | Keterangan |
 |--------|------|------------|
 | GET | /api/overview/ | Dashboard summary |
-| GET | /api/suppliers/ | List suppliers |
-| GET | /api/master-bahan/ | List bahan, filter: kategori, aktif |
-| GET | /api/master-bahan/stats/ | Count per kategori |
-| GET | /api/master-bahan/{id}/ | Detail bahan |
-| POST | /api/master-bahan/ | Buat bahan baru |
-| PUT | /api/master-bahan/{id}/ | Update bahan |
-| PATCH | /api/master-bahan/{id}/toggle/ | Toggle aktif |
-| GET | /api/purchases/ | List pembelian, filter: wilayah, kategori, jenis, page |
-| POST | /api/purchases/ | Buat PO baru |
-| GET | /api/purchases/stats/ | Statistik pembelian |
+| GET/POST/PUT/DELETE | /api/suppliers/ | CRUD suppliers |
+| GET/POST/PUT/PATCH/DELETE | /api/master-bahan/ | CRUD bahan baku + toggle aktif |
+| GET/POST/PUT/PATCH/DELETE | /api/wilayah/ | CRUD wilayah + toggle aktif |
+| GET/POST/PUT/PATCH/DELETE | /api/pic/ | CRUD PIC + toggle aktif |
+| GET/POST/PUT/PATCH/DELETE | /api/master-ukuran/ | CRUD ukuran + toggle aktif |
+| GET/POST/PUT/PATCH/DELETE | /api/master-warna/ | CRUD warna + toggle aktif |
+| GET/POST/PUT/PATCH/DELETE | /api/petani/ | CRUD petani/subcon |
+| GET/POST | /api/purchases/ | List + buat PO, filter: wilayah, kategori, jenis, supplier, page |
+| GET | /api/purchases/stats/ | Statistik pembelian per supplier + per bulan |
 | GET | /api/payments/ | List pembayaran |
-| GET | /api/kas/ | Arus kas |
-| GET | /api/operasional/ | Biaya operasional |
-| GET | /api/fees/ | Fee Pak Regen per partai |
+| GET/POST/DELETE | /api/kas/ | Arus kas CRUD |
+| GET/POST/DELETE | /api/operasional/ | Biaya operasional CRUD |
+| GET/POST/DELETE | /api/fees/ | Fee Pak Regen CRUD |
 | GET | /api/import/ | Data impor (raw) |
 | GET | /api/import/summary/ | Ringkasan impor |
+| GET | /api/hutang/ | Hutang ke supplier (purchases - payments) |
+| GET | /api/hutang/stats/ | Ringkasan hutang |
+| POST | /api/hutang/{supplier_id}/bayar/ | Bayar hutang supplier |
+| GET/POST/PUT/DELETE | /api/piutang/ | CRUD piutang customer |
+| GET | /api/penjualan/ | List penjualan, filter: status |
+| GET | /api/penjualan/stats/ | Statistik penjualan |
+| GET | /api/penjualan/stok/ | Stok per jenis (beli - jual) |
+| GET | /api/penjualan/harga-bahan/ | Kontrol harga: rate/kg per supplier per jenis |
+| POST | /api/penjualan/ | Buat penjualan (auto-fill harga, validasi stok) |
+| POST | /api/penjualan/{id}/bayar/ | Terima pembayaran penjualan |
+| DELETE | /api/penjualan/{id}/ | Hapus penjualan |
 
 ---
 
@@ -211,53 +227,81 @@ Data di database disimpan dalam **ribuan** (1000 = Rp 1.000.000):
 
 ## Domain Knowledge — Bisnis Rambut
 
-### Pembelian Lokal
+### Master Data (dari database)
 
-Hierarki: **PIC → Subcon/Supplier → Wilayah → Barang**
+**PIC**:
+| Kode | Nama |
+|------|------|
+| RIGEN | Rigen |
+| PAKDE | Pakde |
 
-**PIC (Person In Charge)**:
-- RIGEN — handle wilayah: Purbalingga, Banjarnegara, Wonosobo, Cilacap, Surabaya, Malang, Madiun, Bandung
-- PAKDE — handle wilayah: Pemalang, Tegal, Brebes, Kebumen, Kediri, Jember, Ponorogo
+**Wilayah**:
+| Kode | Nama | Provinsi | PIC |
+|------|------|----------|-----|
+| JATIM | Jawa Timur | JATIM | RIGEN |
+| JABAR | Jawa Barat | JABAR | RIGEN |
+| JATENG | Jawa Tengah | JATENG | RIGEN |
+| SUMATRA | Sumatra | SUMATRA | RIGEN |
+| INDIA | India | INDIA | RIGEN |
 
-**Wilayah per Provinsi**:
-- JATENG: Purbalingga, Banjarnegara, Wonosobo, Pemalang, Tegal, Brebes, Cilacap, Kebumen
-- JATIM: Surabaya, Malang, Kediri, Jember, Madiun, Ponorogo
-- JABAR: Bandung, Bekasi, Bogor, Garut, Tasikmalaya, Ciamis
+**Supplier**:
+| ID | Nama | Wilayah |
+|----|------|---------|
+| 1 | Dani | Jawa Timur |
+| 2 | Topik | Jawa Timur |
+| 3 | Gandi | Jawa Timur |
+| 4 | Regen | Jawa Timur |
+| 5 | Indra | Jawa Tengah |
+| 6 | Feri | Jawa Tengah |
+| 7 | Solihin | Jawa Tengah |
+| 8 | Uyi | Jawa Barat |
+| 9 | Kosim | Jawa Barat |
+| 10 | Mr Islam | India |
+| 14 | Pakde | Jawa Timur |
 
-**Subcon/Petani** = supplier lokal (Pak Tarno, Bu Siti, Pak Joko, dll.), tiap subcon terikat ke 1 wilayah dan 1 PIC.
+**Bahan Baku** (semua kategori "Bahan Baku"):
+| Kode | Nama | Satuan |
+|------|------|--------|
+| BRK | Brangkas | Kg |
+| CCN | Cucian | Kg |
+| KRT | Kritingan | Kg |
+| LUS | Lus | Kg |
+| RMY | Remy | Kg |
+| RTL | Retulan | Kg |
 
-**Barang Lokal** (kategori RAMBUT + LIMBAH):
-| Nama | Harga/Kg (Rp) |
-|------|---------------|
-| Remy Super | 850.000 |
-| Remy Anak | 750.000 |
-| Remy Biasa | 650.000 |
-| Lus Panjang | 450.000 |
-| Lus Pendek | 350.000 |
-| Kribo/Ombak | 300.000 |
-| Brangkas | 200.000 |
-| Uban | 150.000 |
-| Gimbal | 100.000 |
-| Limbah Rambut | 50.000 |
+**Ukuran**:
+- **Inch** (untuk Retulan): 1" sampai 30" — dipakai oleh Mr Islam (India)
+- **Cm** (untuk Remy): 5cm, 10cm, 15cm, 20cm, 25cm, 30cm
 
-**Sistem Deposit**: Subcon diberi deposit tunai/transfer. Pembelian mengurangi saldo deposit.
+**Warna**:
+| Kode | Nama |
+|------|------|
+| HT | Hitam |
+| UB | Uban |
+| MRH | Merah |
+| CMR | Campuran |
+
+### Logika Bisnis
+
+**Penjualan**: Dijual ke PT Indo Hair Corp sebagai customer. Margin default 5%.
+- Harga jual = harga beli × (1 + margin%)
+- Stok = total beli (purchases) - total jual (penjualan) per jenis
+- Auto-fill harga beli dari harga terakhir PO
+
+**Hutang 2 Arah**:
+- **Hutang** (kita → supplier): dihitung dari total purchases - total payments per supplier
+- **Piutang** (PT IHC → kita): dihitung dari penjualan.total - penjualan.terbayar
+
+**Currency**: IDR untuk pembelian lokal, USD untuk impor (India/Mr Islam)
+
+**Kontrol Harga**: Rate/kg per supplier per jenis = total nilai ÷ total kg
 
 ### Pembelian Impor (India)
 
-**Account**: Mr Islam, Pak Ucup
+**Account**: Mr Islam
 **Mata uang**: USD
-**Barang**: Rambut India per ukuran (10"–27")
+**Barang**: Retulan per ukuran inch (7"–30")
 **Harga**: Per kg per ukuran, makin panjang makin mahal
-**Struktur**: Tanggal → Keterangan (Transfer/Receive/Payment tax) → Kg → Harga → Total (USD) → Balance
-
-Contoh range harga (USD/kg):
-- 10"–12": $100–140
-- 17"–18": $340–375
-- 19"–20": $385–425
-- 21"–22": $465–475
-- 23"–24": $515–530
-- 25"–26": $565–580
-- 27": $615–630
 
 ### Fee Pak Regen
 
@@ -272,24 +316,24 @@ Field: No Invoice, Tanggal, PIC, Subcon, Wilayah, Barang, Qty(kg), Harga/Kg, Tot
 
 ---
 
-## Current State (Per Mei 2026)
+## Current State (Per 12 Mei 2026)
 
 ### Sudah Selesai
+
 - Overview dashboard dengan KPI cards
-- Supplier list + detail
-- Master Bahan Baku (CRUD + toggle aktif)
-- Pembelian: tab Lokal + Impor, tabel + chart + pagination
-- Buat PO modal (3 step: Supplier → Detail Barang → Konfirmasi)
-- Keuangan: Kas + Pembayaran
+- Supplier CRUD + detail
+- Master Data CRUD: Bahan Baku, Wilayah, PIC, Ukuran, Warna, Petani
+- Pembelian: tab Lokal + Impor, Buat PO modal, pagination, currency (IDR/USD)
+- Keuangan: Kas CRUD, Operasional CRUD, Fee CRUD, Pembayaran
+- Hutang (kita → supplier) + Bayar hutang
+- Piutang (customer → kita) CRUD
+- Penjualan ke PT IHC: CRUD + bayar + stok management + kontrol harga per supplier
 - Fee Report per partai
 - Analytics page
 - Pengaturan (4 tabs: Profil, Notifikasi, Tampilan, Keamanan)
 
-### Dalam Pengerjaan
-- Restructure PO modal: Jalur (Lokal/Impor) → PIC → Supplier → Wilayah flow
-- Integrasi master data dari dokumen Excel ke dashboard
-
 ### Belum Dikerjakan
+
 - Deposit management per subcon
 - Invoice/nota system
 - Rekap saldo per subcon
