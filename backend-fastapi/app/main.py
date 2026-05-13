@@ -51,6 +51,8 @@ async def _ensure_columns(conn):
         await conn.execute(text("ALTER TABLE fees ADD COLUMN date TIMESTAMP DEFAULT NOW()"))
     if existing["purchases"] and "currency" not in existing["purchases"]:
         await conn.execute(text("ALTER TABLE purchases ADD COLUMN currency VARCHAR DEFAULT 'IDR'"))
+    if existing["purchases"] and "sub_bahan" not in existing["purchases"]:
+        await conn.execute(text("ALTER TABLE purchases ADD COLUMN sub_bahan VARCHAR DEFAULT ''"))
 
 
 @asynccontextmanager
