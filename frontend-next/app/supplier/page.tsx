@@ -282,7 +282,7 @@ function DetailView({ detail: s, onBack }: { detail: SupplierDetail; onBack: () 
           <CardContent className="p-0">
             <Table>
               <TableHeader><TableRow className="border-b-2">
-                <TableHead className={TH}>Kategori</TableHead>
+                <TableHead className={TH}>Sub-Bahan</TableHead>
                 <TableHead className={cn(TH, 'text-right')}>Transaksi</TableHead>
                 <TableHead className={cn(TH, 'text-right')}>Total Kg</TableHead>
                 <TableHead className={cn(TH, 'text-right')}>Total Nilai</TableHead>
@@ -311,7 +311,7 @@ function DetailView({ detail: s, onBack }: { detail: SupplierDetail; onBack: () 
               <TableHeader><TableRow className="border-b-2">
                 <TableHead className={TH}>Tanggal</TableHead>
                 <TableHead className={TH}>Bahan</TableHead>
-                <TableHead className={TH}>Kategori</TableHead>
+                <TableHead className={TH}>Sub-Bahan</TableHead>
                 <TableHead className={cn(TH, 'text-right')}>Qty (kg)</TableHead>
                 <TableHead className={cn(TH, 'text-right')}>Harga</TableHead>
                 <TableHead className={cn(TH, 'text-right')}>Total</TableHead>

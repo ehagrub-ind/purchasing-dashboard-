@@ -189,58 +189,54 @@ function SemuaTab({ localData, importData, setMainTab }: any) {
         />
       </div>
 
-      {/* Local Recent Table */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <div>
-            <CardTitle className="text-base font-semibold">Pembelian Lokal Terbaru</CardTitle>
-            <CardDescription>10 transaksi terakhir</CardDescription>
+      {/* 2 Kartu Besar — Lokal & Impor */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <button
+          onClick={() => setMainTab('lokal')}
+          className="group relative overflow-hidden rounded-xl border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-white p-8 text-left transition-all hover:border-blue-400 hover:shadow-lg hover:shadow-blue-100"
+        >
+          <div className="absolute top-0 right-0 -mt-4 -mr-4 h-24 w-24 rounded-full bg-blue-100 opacity-50 transition-transform group-hover:scale-150" />
+          <div className="relative space-y-4">
+            <div className="inline-flex items-center justify-center rounded-lg bg-blue-100 p-3">
+              <Package className="h-8 w-8 text-blue-600" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-gray-900">Pembelian Lokal</h3>
+              <p className="mt-1 text-sm text-muted-foreground">Jawa Timur, Jawa Tengah, Jawa Barat, Sumatra</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="text-2xl font-bold text-blue-600">{localCount}</span>
+              <span className="text-sm text-muted-foreground">transaksi</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm font-medium text-blue-600">
+              Lihat Detail <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </div>
           </div>
-          <Button variant="outline" size="sm" onClick={() => setMainTab('lokal')}>
-            Lihat Semua Lokal <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
-          </Button>
-        </CardHeader>
-        <CardContent>
-          <LocalTable data={localData.data.slice(0, 10)} />
-        </CardContent>
-      </Card>
+        </button>
 
-      {/* Import Recent Table */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <div>
-            <CardTitle className="text-base font-semibold">Raw Material Impor India Terbaru</CardTitle>
-            <CardDescription>10 pengiriman terakhir</CardDescription>
+        <button
+          onClick={() => setMainTab('impor')}
+          className="group relative overflow-hidden rounded-xl border-2 border-violet-200 bg-gradient-to-br from-violet-50 to-white p-8 text-left transition-all hover:border-violet-400 hover:shadow-lg hover:shadow-violet-100"
+        >
+          <div className="absolute top-0 right-0 -mt-4 -mr-4 h-24 w-24 rounded-full bg-violet-100 opacity-50 transition-transform group-hover:scale-150" />
+          <div className="relative space-y-4">
+            <div className="inline-flex items-center justify-center rounded-lg bg-violet-100 p-3">
+              <Plane className="h-8 w-8 text-violet-600" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-gray-900">Pembelian Impor</h3>
+              <p className="mt-1 text-sm text-muted-foreground">India — Mr Islam & Pak Ucup</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="text-2xl font-bold text-violet-600">{rmCount}</span>
+              <span className="text-sm text-muted-foreground">pengiriman &middot; {kg(totalKg)}</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm font-medium text-violet-600">
+              Lihat Detail <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </div>
           </div>
-          <Button variant="outline" size="sm" onClick={() => setMainTab('impor')}>
-            Lihat Semua Impor <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
-          </Button>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Tanggal</TableHead>
-                <TableHead>Keterangan</TableHead>
-                <TableHead className="text-right">Kg</TableHead>
-                <TableHead className="text-right">Nilai USD</TableHead>
-                <TableHead className="text-right">Harga/Kg</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {importData.raw_materials.slice(-10).reverse().map((r: any, i: number) => (
-                <TableRow key={i}>
-                  <TableCell className="whitespace-nowrap">{fmtDate(r.date)}</TableCell>
-                  <TableCell>{r.desc}</TableCell>
-                  <TableCell className="text-right font-semibold">{kg(r.kg)}</TableCell>
-                  <TableCell className="text-right">{usd(r.usd)}</TableCell>
-                  <TableCell className="text-right">{usd(r.kg > 0 ? r.usd / r.kg : 0)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+        </button>
+      </div>
     </div>
   );
 }
@@ -371,7 +367,7 @@ function LocalTable({ data }: { data: any[] }) {
           <TableHead>Supplier</TableHead>
           <TableHead>Wilayah</TableHead>
           <TableHead>Bahan</TableHead>
-          <TableHead>Kategori</TableHead>
+          <TableHead>Sub-Bahan</TableHead>
           <TableHead className="text-right">Qty</TableHead>
           <TableHead className="text-right">Harga</TableHead>
           <TableHead className="text-right">Total</TableHead>
@@ -1605,7 +1601,7 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, master
                       <div className="rounded-lg bg-muted/80 p-3 mb-4">
                         <p className="text-xs font-mono text-muted-foreground">
                           <span className="font-semibold text-foreground">Jenis</span> &nbsp;[Tab]&nbsp;
-                          <span className="font-semibold text-foreground">Kategori</span> &nbsp;[Tab]&nbsp;
+                          <span className="font-semibold text-foreground">Sub-Bahan</span> &nbsp;[Tab]&nbsp;
                           <span className="font-semibold text-foreground">Qty</span> &nbsp;[Tab]&nbsp;
                           <span className="font-semibold text-foreground">Harga</span> &nbsp;[Tab]&nbsp;
                           <span className="text-muted-foreground">Petani</span> &nbsp;[Tab]&nbsp;
@@ -1662,7 +1658,7 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, master
                           <TableRow>
                             <TableHead className="w-8">#</TableHead>
                             <TableHead>Bahan</TableHead>
-                            <TableHead>Kategori</TableHead>
+                            <TableHead>Sub-Bahan</TableHead>
                             <TableHead className="text-right">Qty</TableHead>
                             <TableHead className="text-right">Harga</TableHead>
                             <TableHead className="text-right">Total</TableHead>
@@ -2004,7 +2000,7 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, master
                               <TableRow>
                                 <TableHead>#</TableHead>
                                 <TableHead>Bahan</TableHead>
-                                <TableHead>Kategori</TableHead>
+                                <TableHead>Sub-Bahan</TableHead>
                                 <TableHead className="text-right">Qty</TableHead>
                                 <TableHead className="text-right">Harga</TableHead>
                                 <TableHead className="text-right">Total</TableHead>
@@ -2047,7 +2043,7 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, master
                           </div>
                           {!isImpor && (
                             <div>
-                              <p className="text-muted-foreground">Kategori</p>
+                              <p className="text-muted-foreground">Sub-Bahan</p>
                               <p className="font-medium">{form.kategori}</p>
                             </div>
                           )}
