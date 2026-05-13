@@ -83,6 +83,33 @@ export const api = {
     return res.json();
   },
 
+  // Sub-Bahan
+  getSubBahan: (params: Record<string, any> = {}) => {
+    const qs = new URLSearchParams(params).toString();
+    return fetchJSON(`/sub-bahan${qs ? '?' + qs : ''}`);
+  },
+  getSubBahanStats: () => fetchJSON('/sub-bahan/stats'),
+  createSubBahan: async (data: any) => {
+    const res = await fetch(`${BASE}/sub-bahan/`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+    if (!res.ok) throw new Error(`API ${res.status}`);
+    return res.json();
+  },
+  updateSubBahan: async (id: number, data: any) => {
+    const res = await fetch(`${BASE}/sub-bahan/${id}/`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+    if (!res.ok) throw new Error(`API ${res.status}`);
+    return res.json();
+  },
+  toggleSubBahan: async (id: number) => {
+    const res = await fetch(`${BASE}/sub-bahan/${id}/toggle/`, { method: 'PATCH' });
+    if (!res.ok) throw new Error(`API ${res.status}`);
+    return res.json();
+  },
+  deleteSubBahan: async (id: number) => {
+    const res = await fetch(`${BASE}/sub-bahan/${id}/`, { method: 'DELETE' });
+    if (!res.ok) throw new Error(`API ${res.status}`);
+    return res.json();
+  },
+
   // Wilayah
   getWilayah: (params: Record<string, any> = {}) => {
     const qs = new URLSearchParams(params).toString();

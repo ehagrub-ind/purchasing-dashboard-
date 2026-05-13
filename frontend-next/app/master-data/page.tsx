@@ -13,7 +13,7 @@ import { Select } from '@/components/ui/select';
 import {
   Database, MapPin, Users, Sprout, UserCog, Ruler, Palette,
   Plus, Search, Pencil, Power, Trash2, X, Loader2,
-  Package, CheckCircle2,
+  Package, CheckCircle2, Layers,
 } from 'lucide-react';
 
 export default function MasterDataPage() {
@@ -29,6 +29,7 @@ export default function MasterDataPage() {
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
           <TabsTrigger value="bahan" className="gap-1.5"><Package className="h-3.5 w-3.5" />Bahan</TabsTrigger>
+          <TabsTrigger value="sub-bahan" className="gap-1.5"><Layers className="h-3.5 w-3.5" />Sub-Bahan</TabsTrigger>
           <TabsTrigger value="ukuran" className="gap-1.5"><Ruler className="h-3.5 w-3.5" />Ukuran</TabsTrigger>
           <TabsTrigger value="warna" className="gap-1.5"><Palette className="h-3.5 w-3.5" />Warna</TabsTrigger>
           <TabsTrigger value="wilayah" className="gap-1.5"><MapPin className="h-3.5 w-3.5" />Wilayah</TabsTrigger>
@@ -37,6 +38,7 @@ export default function MasterDataPage() {
         </TabsList>
 
         <TabsContent value="bahan"><BahanTab /></TabsContent>
+        <TabsContent value="sub-bahan"><SubBahanTab /></TabsContent>
         <TabsContent value="ukuran"><UkuranTab /></TabsContent>
         <TabsContent value="warna"><WarnaTab /></TabsContent>
         <TabsContent value="wilayah"><WilayahTab /></TabsContent>
@@ -214,6 +216,111 @@ function BahanModal({ mode, item, onClose, onSave }: { mode: string; item?: any;
       <div className="flex justify-end gap-2 pt-2">
         <Button variant="outline" onClick={onClose}>Batal</Button>
         <Button onClick={() => onSave({ ...f, ...(item?.id ? { id: item.id } : {}) })} disabled={!f.kode_bahan || !f.nama_bahan || !f.kategori_bahan}>Simpan</Button>
+      </div>
+    </Modal>
+  );
+}
+
+/* ================================================================
+   TAB: SUB-BAHAN
+   ================================================================ */
+function SubBahanTab() {
+  const [data, setData] = useState<any[]>([]);
+  const [bahanList, setBahanList] = useState<any[]>([]);
+  const [stats, setStats] = useState<any>(null);
+  const [search, setSearch] = useState('');
+  const [bahanFilter, setBahanFilter] = useState('');
+  const [modal, setModal] = useState<{ mode: 'add' | 'edit'; item?: any } | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  function load() {
+    setLoading(true);
+    Promise.all([api.getSubBahan(), api.getSubBahanStats(), api.getMasterBahan()])
+      .then(([d, s, b]) => { setData(d); setStats(s); setBahanList(b); })
+      .finally(() => setLoading(false));
+  }
+  useEffect(load, []);
+
+  const filtered = data.filter(s => {
+    if (bahanFilter && String(s.bahan_id) !== bahanFilter) return false;
+    if (search && !`${s.kode_sub} ${s.nama_sub}`.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  });
+
+  async function handleToggle(id: number) { await api.toggleSubBahan(id); load(); }
+  async function handleDelete(id: number) { if (confirm('Hapus sub-bahan ini?')) { await api.deleteSubBahan(id); load(); } }
+  async function handleSave(item: any) {
+    if (item.id) await api.updateSubBahan(item.id, item);
+    else await api.createSubBahan(item);
+    setModal(null); load();
+  }
+
+  if (loading) return <LoadingSpinner />;
+
+  return (
+    <div className="space-y-4 mt-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard icon={<Layers className="h-4 w-4 text-blue-600" />} label="Total Sub-Bahan" value={stats?.total || 0} color="bg-blue-100" />
+        <StatCard icon={<CheckCircle2 className="h-4 w-4 text-emerald-600" />} label="Aktif" value={stats?.total_aktif || 0} color="bg-emerald-100" />
+        {Object.entries(stats?.by_bahan || {}).slice(0, 2).map(([k, v]) => (
+          <StatCard key={k} icon={<Package className="h-4 w-4 text-violet-600" />} label={k} value={v as number} color="bg-violet-100" />
+        ))}
+      </div>
+
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input className="pl-9" placeholder="Cari kode atau nama sub-bahan..." value={search} onChange={e => setSearch(e.target.value)} /></div>
+        <Button onClick={() => setModal({ mode: 'add' })}><Plus className="h-4 w-4 mr-1" />Tambah</Button>
+      </div>
+
+      <Card>
+        <CardHeader><CardTitle className="text-base">Daftar Sub-Bahan ({filtered.length})</CardTitle></CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader><TableRow>
+              <TableHead>Kode</TableHead><TableHead>Nama</TableHead><TableHead>Bahan Induk</TableHead>
+              <TableHead>Status</TableHead><TableHead>Aksi</TableHead>
+            </TableRow></TableHeader>
+            <TableBody>
+              {filtered.length === 0 ? <EmptyRow cols={5} /> : filtered.map(s => (
+                <TableRow key={s.id}>
+                  <TableCell><Badge variant="secondary" className="font-mono">{s.kode_sub}</Badge></TableCell>
+                  <TableCell className="font-medium">{s.nama_sub}</TableCell>
+                  <TableCell><Badge variant="success">{s.bahan_nama || '-'}</Badge></TableCell>
+                  <TableCell><StatusBadge aktif={s.aktif} /></TableCell>
+                  <TableCell><ActionButtons onEdit={() => setModal({ mode: 'edit', item: s })} onToggle={() => handleToggle(s.id)} onDelete={() => handleDelete(s.id)} aktif={s.aktif} /></TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      {modal && <SubBahanModal mode={modal.mode} item={modal.item} bahanList={bahanList} onClose={() => setModal(null)} onSave={handleSave} />}
+    </div>
+  );
+}
+
+function SubBahanModal({ mode, item, bahanList, onClose, onSave }: { mode: string; item?: any; bahanList: any[]; onClose: () => void; onSave: (d: any) => void }) {
+  const [f, setF] = useState({
+    kode_sub: item?.kode_sub || '',
+    nama_sub: item?.nama_sub || '',
+    bahan_id: item?.bahan_id ? String(item.bahan_id) : '',
+    catatan: item?.catatan || '',
+  });
+  return (
+    <Modal title={mode === 'add' ? 'Tambah Sub-Bahan' : 'Edit Sub-Bahan'} onClose={onClose}>
+      <Field label="Kode Sub-Bahan"><Input value={f.kode_sub} onChange={e => setF({ ...f, kode_sub: e.target.value })} placeholder="Contoh: RMS" /></Field>
+      <Field label="Nama Sub-Bahan"><Input value={f.nama_sub} onChange={e => setF({ ...f, nama_sub: e.target.value })} placeholder="Contoh: Remy Super" /></Field>
+      <Field label="Bahan Induk">
+        <Select value={f.bahan_id} onChange={e => setF({ ...f, bahan_id: e.target.value })}>
+          <option value="">-- Pilih Bahan --</option>
+          {bahanList.map(b => <option key={b.id} value={b.id}>{b.nama_bahan} ({b.kode_bahan})</option>)}
+        </Select>
+      </Field>
+      <Field label="Catatan"><Input value={f.catatan} onChange={e => setF({ ...f, catatan: e.target.value })} /></Field>
+      <div className="flex justify-end gap-2 pt-2">
+        <Button variant="outline" onClick={onClose}>Batal</Button>
+        <Button onClick={() => onSave({ ...f, bahan_id: parseInt(f.bahan_id), ...(item?.id ? { id: item.id } : {}) })} disabled={!f.kode_sub || !f.nama_sub || !f.bahan_id}>Simpan</Button>
       </div>
     </Modal>
   );

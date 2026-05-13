@@ -86,6 +86,23 @@ class MasterBahan(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
+class SubBahan(Base):
+    __tablename__ = "sub_bahan"
+    __table_args__ = (Index("ix_sub_bahan_bahan_id", "bahan_id"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    kode_sub: Mapped[str] = mapped_column(String, unique=True)
+    nama_sub: Mapped[str] = mapped_column(String)
+    bahan_id: Mapped[int] = mapped_column(Integer, ForeignKey("master_bahan.id"))
+    satuan: Mapped[str] = mapped_column(String, default="kg")
+    harga_standar: Mapped[float] = mapped_column(Float, default=0)
+    aktif: Mapped[bool] = mapped_column(Boolean, default=True)
+    catatan: Mapped[str | None] = mapped_column(String, nullable=True, default=None)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    bahan: Mapped["MasterBahan"] = relationship()
+
+
 class MasterUkuran(Base):
     __tablename__ = "master_ukuran"
 

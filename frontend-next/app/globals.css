@@ -1,4 +1,14 @@
 @import "tailwindcss";
+
+select {
+  color-scheme: light !important;
+  -webkit-appearance: none;
+}
+select option {
+  color-scheme: light !important;
+  background-color: #ffffff !important;
+  color: #1a1a2e !important;
+}
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 @theme {
