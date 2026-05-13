@@ -1458,16 +1458,10 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, master
                         }))}
                       />
                       {selectedSupplier && (
-                        <div className="mt-2 rounded-lg bg-accent/50 p-3 text-sm">
-                          <div className="flex items-center gap-2">
-                            <Badge variant={(selectedSupplier.wilayah || '').toLowerCase() as any}>
-                              {selectedSupplier.wilayah}
-                            </Badge>
-                            <Badge variant="secondary">{selectedSupplier.pic}</Badge>
-                            <span className="text-muted-foreground">
-                              {selectedSupplier.total_transaksi} transaksi · {kg(selectedSupplier.total_kg)}
-                            </span>
-                          </div>
+                        <div className="mt-2 rounded-lg bg-accent/50 px-3 py-2 text-sm">
+                          <Badge variant={(selectedSupplier.wilayah || '').toLowerCase() as any}>
+                            {selectedSupplier.wilayah}
+                          </Badge>
                         </div>
                       )}
                     </div>
@@ -1509,6 +1503,7 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, master
                       <Select
                         value={form.wilayah}
                         onChange={e => update('wilayah', e.target.value)}
+                        disabled={!!form.supplierId}
                       >
                         <option value="">-- Otomatis dari supplier --</option>
                         {wilayahOptions.map(w => (
@@ -1687,14 +1682,12 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, master
                                   )}
                                 </TableCell>
                                 <TableCell>
-                                  <select
-                                    className="bg-transparent text-sm w-full outline-none cursor-pointer"
-                                    value={row.kategori}
-                                    onChange={e => editPastedRow(i, 'kategori', e.target.value)}
-                                  >
-                                    <option value="">-</option>
-                                    {KATEGORI_OPTIONS.map(k => <option key={k} value={k}>{k}</option>)}
-                                  </select>
+                                  <input
+                                    className="bg-transparent text-sm w-full outline-none border-b border-transparent hover:border-muted-foreground/30 focus:border-primary transition-colors"
+                                    value={row.sub_bahan}
+                                    onChange={e => editPastedRow(i, 'sub_bahan', e.target.value)}
+                                    placeholder="-"
+                                  />
                                 </TableCell>
                                 <TableCell className="text-right">
                                   <input
@@ -1981,7 +1974,7 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, master
                         <>
                           <div>
                             <p className="text-muted-foreground">PIC</p>
-                            <Badge variant="secondary">{form.pic}</Badge>
+                            <Badge variant="secondary">{picOptions.find(p => p.kode === form.pic)?.nama || form.pic}</Badge>
                           </div>
                           {form.petani && (
                             <div>
@@ -2019,7 +2012,7 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, master
                                   <TableRow key={i}>
                                     <TableCell className="text-muted-foreground text-xs">{i + 1}</TableCell>
                                     <TableCell className="font-medium">{row.jenis}</TableCell>
-                                    <TableCell>{row.kategori || '-'}</TableCell>
+                                    <TableCell>{row.sub_bahan || '-'}</TableCell>
                                     <TableCell className="text-right">{kg(rQ)}</TableCell>
                                     <TableCell className="text-right">{rupiahFull(rP)}</TableCell>
                                     <TableCell className="text-right font-semibold">{rupiahFull(rQ * rP)}</TableCell>
@@ -2046,10 +2039,10 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, master
                             <p className="text-muted-foreground">{isImpor ? 'Barang' : 'Bahan'}</p>
                             <p className="font-medium">{isImpor ? `Rambut India ${form.ukuran}"` : form.jenis}</p>
                           </div>
-                          {!isImpor && (
+                          {!isImpor && form.sub_bahan && (
                             <div>
                               <p className="text-muted-foreground">Sub-Bahan</p>
-                              <p className="font-medium">{form.kategori}</p>
+                              <p className="font-medium">{form.sub_bahan}</p>
                             </div>
                           )}
                           <div>
