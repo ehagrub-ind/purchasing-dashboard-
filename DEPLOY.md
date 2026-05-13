@@ -1,6 +1,67 @@
 # Deployment Guide — IHC Purchasing Dashboard
 
 > Dokumen handoff untuk deploy & maintain di VPS via CLI.
+> **File ini juga berfungsi sebagai context untuk Claude Code di VPS** — cukup buka file ini, Claude langsung tahu cara manage project.
+
+---
+
+## Untuk Claude Code di VPS
+
+Kamu adalah AI assistant yang mengelola deployment **IHC Purchasing Dashboard** di VPS ini.
+
+### Identitas Project
+- **Repo**: `git@github.com:ehagrub-ind/purchasing-dashboard-.git`
+- **Branch**: `main`
+- **Stack**: Next.js 14 (frontend) + FastAPI (backend) + PostgreSQL 15 (database)
+- **Orchestration**: Docker Compose (3 services)
+- **Working dir**: Tempat repo ini di-clone di VPS
+
+### Apa yang Harus Kamu Lakukan
+
+1. **Kalau diminta update/deploy**:
+   ```bash
+   git pull origin main
+   docker compose up -d --build
+   docker compose ps
+   curl http://localhost:4100/api/health
+   ```
+   Laporkan status container dan response health check.
+
+2. **Kalau ada error 500 / column not exist**:
+   ```bash
+   docker compose exec backend python -c "
+   from app.database import engine
+   from app.models import Base
+   import asyncio
+   async def fix():
+       async with engine.begin() as conn:
+           await conn.run_sync(Base.metadata.create_all)
+   asyncio.run(fix())
+   print('OK')
+   "
+   ```
+   Lalu restart backend: `docker compose up -d --build backend`
+
+3. **Kalau diminta cek log / debug**:
+   ```bash
+   docker compose logs --tail=50 backend
+   docker compose logs --tail=50 frontend
+   ```
+
+4. **Kalau diminta backup database**:
+   ```bash
+   docker compose exec db pg_dump -U postgres purchasing > backup_$(date +%Y%m%d_%H%M).sql
+   ```
+
+5. **Kalau diminta restore backup**:
+   ```bash
+   cat <backup_file>.sql | docker compose exec -T db psql -U postgres purchasing
+   ```
+
+### Yang TIDAK Boleh Dilakukan
+- Jangan `docker compose down -v` tanpa konfirmasi — ini menghapus semua data
+- Jangan edit code di VPS — semua perubahan harus dari repo lokal lalu push
+- Jangan expose port database (5436) ke public tanpa firewall
 
 ---
 
@@ -51,20 +112,7 @@ print('OK')
 "
 ```
 
-### Kolom yang mungkin belum ada (tambahan terbaru):
-
-```bash
-# sub_bahan di tabel purchases
-docker compose exec backend python -c "
-from app.database import engine
-import asyncio
-async def fix():
-    async with engine.begin() as conn:
-        await conn.execute(__import__('sqlalchemy').text(\"ALTER TABLE purchases ADD COLUMN IF NOT EXISTS sub_bahan VARCHAR DEFAULT ''\"))
-asyncio.run(fix())
-print('OK')
-"
-```
+Backend sudah punya `_ensure_columns` di `app/main.py` yang otomatis menambah kolom baru saat startup. Jika masih error setelah rebuild, jalankan script di atas.
 
 ---
 
@@ -112,7 +160,7 @@ docker compose ps
 # Masuk ke database
 docker compose exec db psql -U postgres -d purchasing
 
-# Reset total (⚠️ DATA HILANG)
+# Reset total (⚠️ DATA HILANG — konfirmasi dulu!)
 docker compose down -v && docker compose up -d --build
 ```
 
@@ -127,7 +175,7 @@ docker compose down -v && docker compose up -d --build
 | Backend crash loop | `docker compose logs --tail=50 backend` → fix error → rebuild |
 | Port sudah dipakai | `docker compose down && docker compose up -d --build` |
 | Database connection refused | `docker compose restart db` → tunggu 10 detik → restart backend |
-| Login gagal "Email atau password salah" | Cek user aktif: `curl http://localhost:4100/api/users/` |
+| Login gagal | Cek user aktif: `curl http://localhost:4100/api/users/` |
 
 ---
 
