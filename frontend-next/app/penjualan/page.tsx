@@ -235,7 +235,7 @@ function HargaBahanSection({ hargaData }: { hargaData: any }) {
             <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent border-b-2">
-                  <TableHead className="text-xs uppercase tracking-wider font-semibold">Jenis Bahan</TableHead>
+                  <TableHead className="text-xs uppercase tracking-wider font-semibold">Bahan</TableHead>
                   <TableHead className="text-xs uppercase tracking-wider font-semibold">Supplier</TableHead>
                   <TableHead className="text-xs uppercase tracking-wider font-semibold text-right">Rate/Kg</TableHead>
                   <TableHead className="text-xs uppercase tracking-wider font-semibold text-right">Harga Terakhir</TableHead>
@@ -375,7 +375,7 @@ function PenjualanSection({ filtered, filter, setFilter, setShowBayar, load }: a
               <TableHeader>
                 <TableRow className="hover:bg-transparent border-b-2">
                   <TableHead className="text-xs uppercase tracking-wider font-semibold">Tanggal</TableHead>
-                  <TableHead className="text-xs uppercase tracking-wider font-semibold">Jenis Bahan</TableHead>
+                  <TableHead className="text-xs uppercase tracking-wider font-semibold">Bahan</TableHead>
                   <TableHead className="text-xs uppercase tracking-wider font-semibold">Qty</TableHead>
                   <TableHead className="text-xs uppercase tracking-wider font-semibold text-right">Harga Beli</TableHead>
                   <TableHead className="text-xs uppercase tracking-wider font-semibold text-right">Harga Jual (+5%)</TableHead>
@@ -509,7 +509,7 @@ function CreateModal({ masterBahan, stokData, onClose, onCreated }: { masterBaha
               <Input type="date" value={form.tanggal} onChange={e => update('tanggal', e.target.value)} />
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">Jenis Bahan</label>
+              <label className="text-sm font-medium mb-1 block">Bahan</label>
               <Select value={form.jenis} onChange={e => handleJenisChange(e.target.value)}>
                 <option value="">-- Pilih --</option>
                 {masterBahan.map((b: any) => {

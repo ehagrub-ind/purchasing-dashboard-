@@ -310,7 +310,7 @@ function DetailView({ detail: s, onBack }: { detail: SupplierDetail; onBack: () 
             <Table>
               <TableHeader><TableRow className="border-b-2">
                 <TableHead className={TH}>Tanggal</TableHead>
-                <TableHead className={TH}>Jenis</TableHead>
+                <TableHead className={TH}>Bahan</TableHead>
                 <TableHead className={TH}>Kategori</TableHead>
                 <TableHead className={cn(TH, 'text-right')}>Qty (kg)</TableHead>
                 <TableHead className={cn(TH, 'text-right')}>Harga</TableHead>

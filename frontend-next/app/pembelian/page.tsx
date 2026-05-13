@@ -370,7 +370,7 @@ function LocalTable({ data }: { data: any[] }) {
           <TableHead>Tanggal</TableHead>
           <TableHead>Supplier</TableHead>
           <TableHead>Wilayah</TableHead>
-          <TableHead>Jenis</TableHead>
+          <TableHead>Bahan</TableHead>
           <TableHead>Kategori</TableHead>
           <TableHead className="text-right">Qty</TableHead>
           <TableHead className="text-right">Harga</TableHead>
@@ -1661,7 +1661,7 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, master
                         <TableHeader>
                           <TableRow>
                             <TableHead className="w-8">#</TableHead>
-                            <TableHead>Jenis</TableHead>
+                            <TableHead>Bahan</TableHead>
                             <TableHead>Kategori</TableHead>
                             <TableHead className="text-right">Qty</TableHead>
                             <TableHead className="text-right">Harga</TableHead>
@@ -1748,7 +1748,7 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, master
                 <div>
                   <label className="text-sm font-medium mb-1.5 flex items-center gap-2">
                     <Tag className="h-4 w-4 text-muted-foreground" />
-                    Bahan / Jenis
+                    Bahan
                   </label>
                   {!isManualJenis ? (
                     <Select
@@ -2003,7 +2003,7 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, master
                             <TableHeader>
                               <TableRow>
                                 <TableHead>#</TableHead>
-                                <TableHead>Jenis</TableHead>
+                                <TableHead>Bahan</TableHead>
                                 <TableHead>Kategori</TableHead>
                                 <TableHead className="text-right">Qty</TableHead>
                                 <TableHead className="text-right">Harga</TableHead>
@@ -2042,7 +2042,7 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, master
                       <>
                         <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
                           <div>
-                            <p className="text-muted-foreground">{isImpor ? 'Barang' : 'Jenis'}</p>
+                            <p className="text-muted-foreground">{isImpor ? 'Barang' : 'Bahan'}</p>
                             <p className="font-medium">{isImpor ? `Rambut India ${form.ukuran}"` : form.jenis}</p>
                           </div>
                           {!isImpor && (
