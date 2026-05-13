@@ -11,13 +11,16 @@ import { useAuth } from '@/lib/auth';
 
 const NAV_ITEMS = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/supplier', label: 'Supplier', icon: Users },
   { href: '/master-data', label: 'Master Data', icon: Database },
   { href: '/pembelian', label: 'Pembelian', icon: ShoppingBag },
+  { href: '/penjualan', label: 'Penjualan', icon: TrendingUp },
+];
+
+const FINANCE_ITEMS = [
   { href: '/keuangan', label: 'Keuangan', icon: DollarSign },
   { href: '/arus-kas', label: 'Arus Kas', icon: ArrowLeftRight },
+  { href: '/supplier', label: 'Hutang Supplier', icon: Users },
   { href: '/hutang', label: 'Hutang', icon: CreditCard },
-  { href: '/penjualan', label: 'Penjualan', icon: TrendingUp },
   { href: '/fee-report', label: 'Fee Report', icon: FileText },
 ];
 
@@ -50,6 +53,27 @@ export default function Sidebar() {
         <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.15em] text-white/40">Menu Utama</p>
         {NAV_ITEMS.map((item) => {
           const active = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all duration-200',
+                active
+                  ? 'bg-white/20 text-white shadow-lg shadow-black/10'
+                  : 'text-white/60 hover:bg-white/10 hover:text-white'
+              )}
+            >
+              <item.icon className={cn('h-[18px] w-[18px] transition-colors', active ? 'text-white' : 'text-white/50 group-hover:text-white')} />
+              <span className="flex-1">{item.label}</span>
+              {active && <ChevronRight className="h-3.5 w-3.5 text-white/60" />}
+            </Link>
+          );
+        })}
+
+        <p className="mb-2 mt-6 px-3 text-[10px] font-semibold uppercase tracking-[0.15em] text-white/40">Keuangan</p>
+        {FINANCE_ITEMS.map((item) => {
+          const active = pathname.startsWith(item.href);
           return (
             <Link
               key={item.href}

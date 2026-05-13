@@ -92,8 +92,8 @@ export default function SupplierPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Supplier</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Ringkasan supplier, total pembelian, dana masuk, dan saldo</p>
+          <h1 className="text-2xl font-bold tracking-tight">Hutang Supplier</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Ringkasan hutang, pembayaran, dan saldo per supplier</p>
         </div>
         <div className="flex items-center gap-2">
           <Button size="sm"><Plus className="mr-1.5 h-4 w-4" />Tambah Supplier</Button>
