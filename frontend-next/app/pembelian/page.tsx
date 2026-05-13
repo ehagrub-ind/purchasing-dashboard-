@@ -1457,13 +1457,6 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, master
                           group: s.wilayah,
                         }))}
                       />
-                      {selectedSupplier && (
-                        <div className="mt-2 rounded-lg bg-accent/50 px-3 py-2 text-sm">
-                          <Badge variant={(selectedSupplier.wilayah || '').toLowerCase() as any}>
-                            {selectedSupplier.wilayah}
-                          </Badge>
-                        </div>
-                      )}
                     </div>
 
                     {/* Petani combo: dropdown + ketik baru */}
