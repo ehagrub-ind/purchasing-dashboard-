@@ -1434,7 +1434,7 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, master
                         PIC (Penanggung Jawab)
                       </label>
                       <Select value={form.pic} onChange={e => handlePicChange(e.target.value)}>
-                        <option value="">-- Pilih PIC --</option>
+                        <option value="">Pilih PIC</option>
                         {picOptions.map(p => (
                           <option key={p.kode} value={p.kode}>{p.nama}</option>
                         ))}
@@ -1450,7 +1450,7 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, master
                         value={form.supplierId}
                         onChange={handleSupplierChange}
                         disabled={!form.pic}
-                        placeholder={form.pic ? 'Cari supplier...' : '-- Pilih PIC dulu --'}
+                        placeholder={form.pic ? 'Cari supplier...' : 'Pilih PIC dulu'}
                         options={filteredSuppliers.map((s: any) => ({
                           value: String(s.id),
                           label: s.name,
@@ -1505,7 +1505,7 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, master
                         onChange={e => update('wilayah', e.target.value)}
                         disabled={!!form.supplierId}
                       >
-                        <option value="">-- Otomatis dari supplier --</option>
+                        <option value="">Otomatis dari supplier</option>
                         {wilayahOptions.map(w => (
                           <option key={w} value={w}>{w}</option>
                         ))}
@@ -1525,7 +1525,7 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, master
                       value={form.supplierId}
                       onChange={e => handleSupplierChange(e.target.value)}
                     >
-                      <option value="">-- Pilih Account --</option>
+                      <option value="">Pilih account</option>
                       {imporSuppliers.map((s: any) => (
                         <option key={s.id} value={s.id}>{s.name}</option>
                       ))}
@@ -1748,22 +1748,22 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, master
                       value={form.jenis}
                       onChange={e => handleJenisSelect(e.target.value)}
                     >
-                      <option value="">-- Pilih Bahan --</option>
+                      <option value="">Pilih bahan</option>
                       {['Bahan Baku', 'Bahan Proses', 'Recycle/WIP'].map(kat => {
                         const group = masterBahan.filter((b: any) => b.kategori_bahan === kat);
                         if (group.length === 0) return null;
                         return (
-                          <optgroup key={kat} label={`── ${kat} ──`}>
+                          <optgroup key={kat} label={kat}>
                             {group.map((b: any) => (
                               <option key={b.id} value={b.nama_bahan}>
-                                {b.nama_bahan} ({b.kode_bahan})
+                                {b.nama_bahan}
                               </option>
                             ))}
                           </optgroup>
                         );
                       })}
-                      <optgroup label="──────────">
-                        <option value="__manual__">Input Manual...</option>
+                      <optgroup label="Lainnya">
+                        <option value="__manual__">Ketik manual...</option>
                       </optgroup>
                     </Select>
                   ) : (
@@ -1804,9 +1804,9 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, master
                     onChange={e => update('sub_bahan', e.target.value)}
                     disabled={!form.jenis}
                   >
-                    <option value="">{form.jenis ? (subBahanList.length > 0 ? '-- Pilih Sub-Bahan --' : 'Tidak ada sub-bahan') : '-- Pilih Bahan dulu --'}</option>
+                    <option value="">{form.jenis ? (subBahanList.length > 0 ? 'Pilih sub-bahan' : 'Tidak ada sub-bahan') : 'Pilih bahan dulu'}</option>
                     {subBahanList.map((sb: any) => (
-                      <option key={sb.id} value={sb.nama_sub}>{sb.nama_sub} ({sb.kode_sub})</option>
+                      <option key={sb.id} value={sb.nama_sub}>{sb.nama_sub}</option>
                     ))}
                   </Select>
                 </div>
@@ -1818,9 +1818,9 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, master
                       Ukuran
                     </label>
                     <Select value={form.ukuran} onChange={e => update('ukuran', e.target.value)}>
-                      <option value="">-- Pilih Ukuran --</option>
+                      <option value="">Pilih ukuran</option>
                       {filteredUkuran.map((u: any) => (
-                        <option key={u.id} value={u.kode_ukuran}>{u.nama_ukuran}</option>
+                        <option key={u.id} value={u.nama_ukuran}>{u.nama_ukuran}</option>
                       ))}
                     </Select>
                   </div>
@@ -1830,9 +1830,9 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, master
                       Warna
                     </label>
                     <Select value={form.warna} onChange={e => update('warna', e.target.value)}>
-                      <option value="">-- Pilih Warna --</option>
+                      <option value="">Pilih warna</option>
                       {masterWarna.map((w: any) => (
-                        <option key={w.id} value={w.kode_warna}>{w.nama_warna}</option>
+                        <option key={w.id} value={w.nama_warna}>{w.nama_warna}</option>
                       ))}
                     </Select>
                   </div>
@@ -1888,9 +1888,9 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, master
                       Ukuran
                     </label>
                     <Select value={form.ukuran} onChange={e => update('ukuran', e.target.value)}>
-                      <option value="">-- Pilih Ukuran --</option>
+                      <option value="">Pilih ukuran</option>
                       {filteredUkuran.map((u: any) => (
-                        <option key={u.id} value={u.kode_ukuran}>{u.nama_ukuran}</option>
+                        <option key={u.id} value={u.nama_ukuran}>{u.nama_ukuran}</option>
                       ))}
                     </Select>
                   </div>
@@ -1900,9 +1900,9 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, master
                       Warna
                     </label>
                     <Select value={form.warna} onChange={e => update('warna', e.target.value)}>
-                      <option value="">-- Pilih Warna --</option>
+                      <option value="">Pilih warna</option>
                       {masterWarna.map((w: any) => (
-                        <option key={w.id} value={w.kode_warna}>{w.nama_warna}</option>
+                        <option key={w.id} value={w.nama_warna}>{w.nama_warna}</option>
                       ))}
                     </Select>
                   </div>

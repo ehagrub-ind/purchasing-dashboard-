@@ -300,6 +300,20 @@ Data di database disimpan dalam **ribuan** (1000 = Rp 1.000.000):
 - `rupiah()` / `rupiahFull()` mengalikan × 1000
 - `idr()` / `idrFull()` TIDAK mengalikan (untuk nilai absolut)
 
+### Form Input PO — Prinsip Mudah Dipakai
+
+Semua dropdown di form Buat PO **hanya tampilkan nama**, tanpa kode teknis:
+- **PIC**: tampil "Rigen", "Pakde" (value = kode_pic untuk logika filter)
+- **Supplier**: searchable combobox, ketik nama langsung filter
+- **Wilayah**: otomatis terisi dari supplier, user tidak perlu isi manual
+- **Bahan**: tampil "Remy", "Brangkas" (tanpa kode "RMY", "BRK")
+- **Sub-Bahan**: tampil nama saja (tanpa kode)
+- **Ukuran**: tampil `12"`, `14"` (value = nama_ukuran)
+- **Warna**: tampil "Hitam", "Uban" (value = nama_warna)
+- **Placeholder**: tanpa tanda `-- --`, cukup "Pilih bahan", "Pilih warna"
+
+Jika menambah dropdown baru, ikuti pola ini: **nama untuk display, kode hanya di belakang layar**.
+
 ---
 
 ## Domain Knowledge — Bisnis Rambut
