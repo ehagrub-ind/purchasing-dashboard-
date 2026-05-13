@@ -50,6 +50,8 @@ async def seed():
                 {"nama": "David", "email": "david@indohaircorp.co.id", "telepon": "0812-3456-7890", "role": "Owner"},
                 {"nama": "Dian", "email": "dian@indohaircorp.co.id", "telepon": "", "role": "Admin"},
                 {"nama": "Rigen", "email": "rigen@indohaircorp.co.id", "telepon": "", "role": "PIC"},
+                {"nama": "Pakde", "email": "pakde@indohaircorp.co.id", "telepon": "", "role": "PIC"},
+                {"nama": "Demo", "email": "demo@indohaircorp.co.id", "telepon": "", "role": "Admin"},
             ]
             for item in user_data:
                 db.add(UserTeam(**item))
