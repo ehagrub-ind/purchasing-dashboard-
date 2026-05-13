@@ -1,3 +1,5 @@
+import hashlib
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -6,6 +8,12 @@ from ..database import get_db
 from ..models import UserTeam
 
 router = APIRouter()
+
+SECRET = "ihc-purchasing-2026"
+
+
+def _hash_password(plain: str) -> str:
+    return hashlib.sha256(f"{SECRET}:{plain}".encode()).hexdigest()
 
 
 def _row(r):
@@ -42,9 +50,11 @@ async def create_user(body: dict, db: AsyncSession = Depends(get_db)):
     if existing:
         raise HTTPException(status_code=400, detail="Email sudah terdaftar")
 
+    password = body.get("password", "")
     row = UserTeam(
         nama=body["nama"],
         email=body["email"].lower().strip(),
+        password_hash=_hash_password(password) if password else "",
         telepon=body.get("telepon", ""),
         role=body.get("role", "PIC"),
         aktif=body.get("aktif", True),
@@ -64,6 +74,8 @@ async def update_user(id: int, body: dict, db: AsyncSession = Depends(get_db)):
         if key in body:
             val = body[key].lower().strip() if key == "email" else body[key]
             setattr(row, key, val)
+    if body.get("password"):
+        row.password_hash = _hash_password(body["password"])
     await db.commit()
     await db.refresh(row)
     return _row(row)
@@ -78,6 +90,19 @@ async def toggle_user(id: int, db: AsyncSession = Depends(get_db)):
     await db.commit()
     await db.refresh(row)
     return {"id": row.id, "aktif": row.aktif}
+
+
+@router.post("/{id}/reset-password/")
+async def reset_password(id: int, body: dict, db: AsyncSession = Depends(get_db)):
+    row = (await db.execute(select(UserTeam).where(UserTeam.id == id))).scalar_one_or_none()
+    if not row:
+        raise HTTPException(status_code=404, detail="User tidak ditemukan")
+    new_pw = body.get("password", "")
+    if not new_pw or len(new_pw) < 6:
+        raise HTTPException(status_code=400, detail="Password minimal 6 karakter")
+    row.password_hash = _hash_password(new_pw)
+    await db.commit()
+    return {"ok": True, "message": f"Password {row.nama} berhasil direset"}
 
 
 @router.delete("/{id}/")

@@ -19,7 +19,7 @@ class _HealthAccessFilter(logging.Filter):
 
 
 logging.getLogger("uvicorn.access").addFilter(_HealthAccessFilter())
-from .routers import overview, suppliers, purchases, payments, kas, operasional, fees, import_india, master_bahan, master_ukuran, master_warna, petani, wilayah, pic_master, user_team, piutang, hutang, arus_kas, auth, penjualan
+from .routers import overview, suppliers, purchases, payments, kas, operasional, fees, import_india, master_bahan, master_ukuran, master_warna, petani, wilayah, pic_master, user_team, piutang, hutang, arus_kas, auth, penjualan, activity_log
 
 
 async def _ensure_columns(conn):
@@ -91,6 +91,7 @@ app.include_router(hutang.router, prefix="/api/hutang", tags=["hutang"])
 app.include_router(arus_kas.router, prefix="/api/arus-kas", tags=["arus-kas"])
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(penjualan.router, prefix="/api/penjualan", tags=["penjualan"])
+app.include_router(activity_log.router, prefix="/api/activity-log", tags=["activity-log"])
 
 
 @app.get("/api/health")

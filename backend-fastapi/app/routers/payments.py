@@ -6,6 +6,7 @@ from sqlalchemy.orm import selectinload
 
 from ..database import get_db
 from ..models import Payment
+from .activity_log import log_activity
 
 router = APIRouter()
 
@@ -59,6 +60,8 @@ async def delete_payment(payment_id: int, db: AsyncSession = Depends(get_db)):
     row = (await db.execute(select(Payment).where(Payment.id == payment_id))).scalar_one_or_none()
     if not row:
         return {"error": "not found"}
+    desc = f"{row.deskripsi} - {row.supplier.name if row.supplier else ''}"
     await db.delete(row)
+    await log_activity(db, None, "System", "hapus_pembayaran", f"Pembayaran #{payment_id}", desc)
     await db.commit()
     return {"deleted": payment_id}

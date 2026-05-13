@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database import get_db
 from ..models import UserTeam
+from .activity_log import log_activity
 
 router = APIRouter()
 
@@ -63,6 +64,9 @@ async def login(body: dict, db: AsyncSession = Depends(get_db)):
             raise HTTPException(status_code=401, detail="Email atau password salah")
 
     token = _make_token(user.id, user.email)
+
+    await log_activity(db, user.id, user.nama, "login", f"Login sebagai {user.role}")
+    await db.commit()
 
     return {
         "token": token,

@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode } from 'react';
 
 const BASE = process.env.NEXT_PUBLIC_API_URL || '/api';
 
@@ -59,11 +59,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(data.user);
   };
 
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem('ihc_token');
     setToken(null);
     setUser(null);
-  };
+    if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+      window.location.href = '/login';
+    }
+  }, []);
+
+  const IDLE_TIMEOUT = 30 * 60 * 1000;
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!token) return;
+
+    function resetTimer() {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(logout, IDLE_TIMEOUT);
+    }
+
+    const events = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
+    events.forEach(e => window.addEventListener(e, resetTimer));
+    resetTimer();
+
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      events.forEach(e => window.removeEventListener(e, resetTimer));
+    };
+  }, [token, logout]);
 
   return (
     <AuthContext.Provider value={{ user, token, loading, login, logout }}>

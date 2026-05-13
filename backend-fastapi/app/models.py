@@ -218,6 +218,22 @@ class Fee(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
+class ActivityLog(Base):
+    __tablename__ = "activity_log"
+    __table_args__ = (
+        Index("ix_activity_log_user_id", "user_id"),
+        Index("ix_activity_log_created_at", "created_at"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    user_nama: Mapped[str] = mapped_column(String, default="")
+    action: Mapped[str] = mapped_column(String)
+    target: Mapped[str] = mapped_column(String, default="")
+    detail: Mapped[str] = mapped_column(String, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
 class Penjualan(Base):
     __tablename__ = "penjualan"
     __table_args__ = (

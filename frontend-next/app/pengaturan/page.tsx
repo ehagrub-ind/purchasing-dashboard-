@@ -15,7 +15,7 @@ import {
   User, Bell, Palette, Shield, Save, Check,
   Mail, Phone, MapPin, Building2, Eye, EyeOff,
   Plus, Pencil, Trash2, X, Users, Loader2,
-  Database, AlertTriangle, Lock, ShoppingCart, CreditCard, Search,
+  Database, AlertTriangle, Lock, ShoppingCart, CreditCard, Search, Clock,
 } from 'lucide-react';
 
 const ROLE_COLORS: Record<string, string> = {
@@ -297,6 +297,7 @@ function UserModal({ user, onClose, onSaved }: { user: any | null; onClose: () =
   const [form, setForm] = useState({
     nama: user?.nama || '',
     email: user?.email || '',
+    password: '',
     telepon: user?.telepon || '',
     role: user?.role || 'PIC',
   });
@@ -310,13 +311,17 @@ function UserModal({ user, onClose, onSaved }: { user: any | null; onClose: () =
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.nama || !form.email) return;
+    if (!isEdit && !form.password) { setError('Password wajib diisi'); return; }
+    if (form.password && form.password.length < 6) { setError('Password minimal 6 karakter'); return; }
     setSubmitting(true);
     setError('');
     try {
+      const payload: any = { nama: form.nama, email: form.email, telepon: form.telepon, role: form.role };
+      if (form.password) payload.password = form.password;
       if (isEdit) {
-        await api.updateUser(user.id, form);
+        await api.updateUser(user.id, payload);
       } else {
-        await api.createUser(form);
+        await api.createUser(payload);
       }
       onSaved();
     } catch (err: any) {
@@ -344,6 +349,16 @@ function UserModal({ user, onClose, onSaved }: { user: any | null; onClose: () =
           <div>
             <label className="text-sm font-medium mb-1.5 block">Email</label>
             <Input type="email" value={form.email} onChange={e => update('email', e.target.value)} placeholder="email@indohaircorp.co.id" required />
+          </div>
+          <div>
+            <label className="text-sm font-medium mb-1.5 block">{isEdit ? 'Password Baru' : 'Password'}</label>
+            <Input
+              type="password"
+              value={form.password}
+              onChange={e => update('password', e.target.value)}
+              placeholder={isEdit ? 'Kosongkan jika tidak diubah' : 'Minimal 6 karakter'}
+              required={!isEdit}
+            />
           </div>
           <div>
             <label className="text-sm font-medium mb-1.5 block">Telepon</label>
@@ -501,13 +516,38 @@ function KeamananTab() {
   const [pwOld, setPwOld] = useState('');
   const [pwNew, setPwNew] = useState('');
   const [pwConfirm, setPwConfirm] = useState('');
+  const [logs, setLogs] = useState<any[]>([]);
+  const [logsLoading, setLogsLoading] = useState(true);
+
+  useEffect(() => {
+    api.getActivityLog(20).then(setLogs).catch(() => {}).finally(() => setLogsLoading(false));
+  }, []);
+
+  const ACTION_LABELS: Record<string, string> = {
+    login: 'Login',
+    hapus_pembelian: 'Hapus Pembelian',
+    hapus_semua_pembelian: 'Hapus Semua Pembelian',
+    hapus_pembayaran: 'Hapus Pembayaran',
+    hapus_semua_pembayaran: 'Hapus Semua Pembayaran',
+  };
+
+  function timeAgo(iso: string) {
+    const diff = Date.now() - new Date(iso).getTime();
+    const m = Math.floor(diff / 60000);
+    if (m < 1) return 'Baru saja';
+    if (m < 60) return `${m} menit lalu`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h} jam lalu`;
+    const d = Math.floor(h / 24);
+    return `${d} hari lalu`;
+  }
 
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Ganti Password</CardTitle>
-          <CardDescription>Pastikan password baru minimal 8 karakter.</CardDescription>
+          <CardDescription>Pastikan password baru minimal 6 karakter.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
@@ -552,26 +592,37 @@ function KeamananTab() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Sesi Aktif</CardTitle>
-          <CardDescription>Perangkat yang sedang login.</CardDescription>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Clock className="h-4 w-4" />
+            Log Aktivitas
+          </CardTitle>
+          <CardDescription>Aktivitas terbaru di sistem.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-3">
-          {[
-            { device: 'MacBook Air — Chrome', location: 'Surabaya, ID', time: 'Aktif sekarang', current: true },
-            { device: 'iPhone 15 — Safari', location: 'Surabaya, ID', time: '2 jam lalu', current: false },
-          ].map((s, i) => (
-            <div key={i} className="flex items-center justify-between rounded-lg border p-3">
-              <div>
-                <p className="text-sm font-medium">{s.device}</p>
-                <p className="text-xs text-muted-foreground">{s.location} · {s.time}</p>
-              </div>
-              {s.current ? (
-                <Badge variant="success">Aktif</Badge>
-              ) : (
-                <Button variant="outline" size="sm">Logout</Button>
-              )}
+        <CardContent>
+          {logsLoading ? (
+            <div className="flex items-center justify-center py-8 gap-2 text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" /><span>Memuat...</span>
             </div>
-          ))}
+          ) : logs.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-8">Belum ada aktivitas</p>
+          ) : (
+            <div className="space-y-2 max-h-[350px] overflow-y-auto">
+              {logs.map((log: any) => (
+                <div key={log.id} className="flex items-start gap-3 rounded-lg border p-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium">{log.user_nama || 'System'}</p>
+                      <Badge variant="secondary" className="text-[10px]">
+                        {ACTION_LABELS[log.action] || log.action}
+                      </Badge>
+                    </div>
+                    {log.target && <p className="text-xs text-muted-foreground truncate">{log.target}</p>}
+                  </div>
+                  <span className="text-[11px] text-muted-foreground whitespace-nowrap">{timeAgo(log.created_at)}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

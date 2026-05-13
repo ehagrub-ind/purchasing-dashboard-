@@ -7,6 +7,7 @@ from sqlalchemy.orm import selectinload
 
 from ..database import get_db
 from ..models import Purchase, Supplier, Petani
+from .activity_log import log_activity
 
 router = APIRouter()
 
@@ -84,6 +85,7 @@ async def delete_all_purchases(db: AsyncSession = Depends(get_db)):
     from sqlalchemy import delete as sql_delete
     count = (await db.execute(select(func.count(Purchase.id)))).scalar() or 0
     await db.execute(sql_delete(Purchase))
+    await log_activity(db, None, "System", "hapus_semua_pembelian", f"{count} record dihapus")
     await db.commit()
     return {"deleted": count}
 
@@ -93,7 +95,9 @@ async def delete_purchase(purchase_id: int, db: AsyncSession = Depends(get_db)):
     row = (await db.execute(select(Purchase).where(Purchase.id == purchase_id))).scalar_one_or_none()
     if not row:
         return {"error": "not found"}
+    desc = f"{row.deskripsi} - {row.supplier.name if row.supplier else ''}"
     await db.delete(row)
+    await log_activity(db, None, "System", "hapus_pembelian", f"Pembelian #{purchase_id}", desc)
     await db.commit()
     return {"deleted": purchase_id}
 

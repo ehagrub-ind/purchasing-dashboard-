@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database import get_db
 from ..models import Supplier, Purchase, Payment
+from .activity_log import log_activity
 
 router = APIRouter()
 
@@ -48,6 +49,7 @@ async def clear_all_purchases(db: AsyncSession = Depends(get_db)):
     from sqlalchemy import delete as sql_delete, func
     count = (await db.execute(select(func.count(Purchase.id)))).scalar() or 0
     await db.execute(sql_delete(Purchase))
+    await log_activity(db, None, "System", "hapus_semua_pembelian", f"{count} record dihapus")
     await db.commit()
     return {"deleted": count, "type": "purchases"}
 
@@ -57,6 +59,7 @@ async def clear_all_payments(db: AsyncSession = Depends(get_db)):
     from sqlalchemy import delete as sql_delete, func
     count = (await db.execute(select(func.count(Payment.id)))).scalar() or 0
     await db.execute(sql_delete(Payment))
+    await log_activity(db, None, "System", "hapus_semua_pembayaran", f"{count} record dihapus")
     await db.commit()
     return {"deleted": count, "type": "payments"}
 

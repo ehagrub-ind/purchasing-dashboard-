@@ -318,6 +318,9 @@ export const api = {
     return res.json();
   },
 
+  // Activity Log
+  getActivityLog: (limit = 100) => fetchJSON(`/activity-log?limit=${limit}`),
+
   // Users / Tim
   getUsers: () => fetchJSON('/users'),
   createUser: async (data: any) => {
@@ -332,6 +335,11 @@ export const api = {
   },
   toggleUser: async (id: number) => {
     const res = await fetch(`${BASE}/users/${id}/toggle/`, { method: 'PATCH' });
+    if (!res.ok) throw new Error(`API ${res.status}`);
+    return res.json();
+  },
+  resetPassword: async (id: number, password: string) => {
+    const res = await fetch(`${BASE}/users/${id}/reset-password/`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password }) });
     if (!res.ok) throw new Error(`API ${res.status}`);
     return res.json();
   },
