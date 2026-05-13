@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import Sidebar from '@/components/Sidebar';
 import Topbar from '@/components/Topbar';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
@@ -12,6 +12,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const isLogin = pathname === '/login';
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     if (!loading && !user && !isLogin) {
@@ -45,10 +50,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <Sidebar />
-      <div className="ml-[260px] min-h-screen">
-        <Topbar />
-        <main className="px-8 py-6">{children}</main>
+      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <div className="md:ml-[260px] min-h-screen">
+        <Topbar onMenuToggle={() => setSidebarOpen(true)} />
+        <main className="px-4 py-4 md:px-8 md:py-6">{children}</main>
       </div>
     </>
   );
