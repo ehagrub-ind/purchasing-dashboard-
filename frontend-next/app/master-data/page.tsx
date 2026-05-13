@@ -167,7 +167,6 @@ function BahanTab() {
 
       <div className="flex items-center gap-3">
         <div className="relative flex-1"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input className="pl-9" placeholder="Cari kode atau nama bahan..." value={search} onChange={e => setSearch(e.target.value)} /></div>
-        <Select value={katFilter} onChange={e => setKatFilter(e.target.value)}><option value="">Semua Kategori</option><option value="Bahan Baku">Bahan Baku</option><option value="Bahan Proses">Bahan Proses</option><option value="Recycle/WIP">Recycle/WIP</option></Select>
         <Button onClick={() => setModal({ mode: 'add' })}><Plus className="h-4 w-4 mr-1" />Tambah</Button>
       </div>
 
@@ -176,17 +175,15 @@ function BahanTab() {
         <CardContent>
           <Table>
             <TableHeader><TableRow>
-              <TableHead>Kode</TableHead><TableHead>Nama</TableHead><TableHead>Kategori</TableHead>
-              <TableHead>Satuan</TableHead><TableHead>Status</TableHead><TableHead>Aksi</TableHead>
+              <TableHead>Kode</TableHead><TableHead>Bahan</TableHead>
+              <TableHead>Satuan</TableHead><TableHead>Aksi</TableHead>
             </TableRow></TableHeader>
             <TableBody>
-              {filtered.length === 0 ? <EmptyRow cols={6} /> : filtered.map(b => (
+              {filtered.length === 0 ? <EmptyRow cols={4} /> : filtered.map(b => (
                 <TableRow key={b.id}>
                   <TableCell><Badge variant="secondary" className="font-mono">{b.kode_bahan}</Badge></TableCell>
                   <TableCell className="font-medium">{b.nama_bahan}</TableCell>
-                  <TableCell><Badge variant={kategoriBadge(b.kategori_bahan)}>{b.kategori_bahan}</Badge></TableCell>
                   <TableCell>{b.satuan}</TableCell>
-                  <TableCell><StatusBadge aktif={b.aktif} /></TableCell>
                   <TableCell><ActionButtons onEdit={() => setModal({ mode: 'edit', item: b })} onToggle={() => handleToggle(b.id)} onDelete={() => handleDelete(b.id)} aktif={b.aktif} /></TableCell>
                 </TableRow>
               ))}
@@ -201,21 +198,16 @@ function BahanTab() {
 }
 
 function BahanModal({ mode, item, onClose, onSave }: { mode: string; item?: any; onClose: () => void; onSave: (d: any) => void }) {
-  const [f, setF] = useState({ kode_bahan: item?.kode_bahan || '', nama_bahan: item?.nama_bahan || '', kategori_bahan: item?.kategori_bahan || '', satuan: item?.satuan || 'kg', catatan: item?.catatan || '' });
+  const [f, setF] = useState({ kode_bahan: item?.kode_bahan || '', nama_bahan: item?.nama_bahan || '', kategori_bahan: item?.kategori_bahan || 'Bahan Baku', satuan: item?.satuan || 'Kg', catatan: item?.catatan || '' });
   return (
     <Modal title={mode === 'add' ? 'Tambah Bahan' : 'Edit Bahan'} onClose={onClose}>
       <Field label="Kode Bahan"><Input value={f.kode_bahan} onChange={e => setF({ ...f, kode_bahan: e.target.value })} placeholder="Contoh: RMS" /></Field>
       <Field label="Nama Bahan"><Input value={f.nama_bahan} onChange={e => setF({ ...f, nama_bahan: e.target.value })} /></Field>
-      <Field label="Kategori">
-        <Select value={f.kategori_bahan} onChange={e => setF({ ...f, kategori_bahan: e.target.value })}>
-          <option value="">-- Pilih --</option><option value="Bahan Baku">Bahan Baku</option><option value="Bahan Proses">Bahan Proses</option><option value="Recycle/WIP">Recycle/WIP</option>
-        </Select>
-      </Field>
       <Field label="Satuan"><Input value={f.satuan} onChange={e => setF({ ...f, satuan: e.target.value })} /></Field>
       <Field label="Catatan"><Input value={f.catatan} onChange={e => setF({ ...f, catatan: e.target.value })} /></Field>
       <div className="flex justify-end gap-2 pt-2">
         <Button variant="outline" onClick={onClose}>Batal</Button>
-        <Button onClick={() => onSave({ ...f, ...(item?.id ? { id: item.id } : {}) })} disabled={!f.kode_bahan || !f.nama_bahan || !f.kategori_bahan}>Simpan</Button>
+        <Button onClick={() => onSave({ ...f, ...(item?.id ? { id: item.id } : {}) })} disabled={!f.kode_bahan || !f.nama_bahan}>Simpan</Button>
       </div>
     </Modal>
   );

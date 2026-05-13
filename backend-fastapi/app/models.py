@@ -144,6 +144,7 @@ class Purchase(Base):
     price: Mapped[float] = mapped_column(Float, default=0)
     total: Mapped[float] = mapped_column(Float, default=0)
     kategori: Mapped[str] = mapped_column(String, default="Lainnya")
+    sub_bahan: Mapped[str] = mapped_column(String, default="")
     currency: Mapped[str] = mapped_column(String, default="IDR")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 

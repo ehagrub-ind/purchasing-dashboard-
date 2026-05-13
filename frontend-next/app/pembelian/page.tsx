@@ -12,6 +12,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
+import { Combobox } from '@/components/ui/combobox';
 import Pagination from '@/components/Pagination';
 import {
   Package, Ship, Weight, DollarSign, Loader2,
@@ -970,6 +971,7 @@ const KATEGORI_OPTIONS = ['Bahan Baku'];
 type PastedRow = {
   jenis: string;
   kategori: string;
+  sub_bahan: string;
   qty: string;
   price: string;
   petani: string;
@@ -985,7 +987,7 @@ function parsePastedText(text: string, masterBahan: any[]): PastedRow[] {
   for (const line of lines) {
     const cols = line.split('\t').map(c => c.trim());
     if (cols.length < 3) {
-      rows.push({ jenis: cols[0] || '', kategori: '', qty: '', price: '', petani: '', keterangan: '', valid: false, error: 'Minimal 3 kolom (Jenis, Qty, Harga)' });
+      rows.push({ jenis: cols[0] || '', kategori: '', sub_bahan: '', qty: '', price: '', petani: '', keterangan: '', valid: false, error: 'Minimal 3 kolom (Jenis, Qty, Harga)' });
       continue;
     }
 
@@ -1025,6 +1027,7 @@ function parsePastedText(text: string, masterBahan: any[]): PastedRow[] {
     rows.push({
       jenis,
       kategori: kategori || '',
+      sub_bahan: '',
       qty: isNaN(qtyNum) ? qty : String(qtyNum),
       price: isNaN(priceNum) ? price : String(priceNum),
       petani,
@@ -1057,6 +1060,8 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, master
   const [pastedRows, setPastedRows] = useState<PastedRow[]>([]);
   const [bulkProgress, setBulkProgress] = useState({ done: 0, total: 0, errors: [] as string[] });
 
+  const [subBahanList, setSubBahanList] = useState<any[]>([]);
+
   const [form, setForm] = useState({
     jalur: 'Lokal' as 'Lokal' | 'Impor',
     date: new Date().toISOString().slice(0, 10),
@@ -1066,6 +1071,7 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, master
     wilayah: '',
     jenis: '',
     kategori: '',
+    sub_bahan: '',
     ukuran: '',
     warna: '',
     qty: '',
@@ -1093,7 +1099,7 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, master
 
   const lokalSuppliers = suppliers.filter((s: any) => (s.jalur || 'Lokal') === 'Lokal');
   const imporSuppliers = suppliers.filter((s: any) => s.jalur === 'Impor');
-  const picOptions = masterPIC.map((p: any) => p.nama_pic);
+  const picOptions = masterPIC.map((p: any) => ({ kode: p.kode_pic, nama: p.nama_pic }));
   const wilayahOptions = masterWilayah.map((w: any) => w.nama_wilayah);
   const filteredSuppliers = form.pic
     ? lokalSuppliers.filter((s: any) => s.pic === form.pic)
@@ -1135,15 +1141,18 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, master
   function handleJenisSelect(value: string) {
     if (value === '__manual__') {
       setIsManualJenis(true);
-      setForm(f => ({ ...f, jenis: '', kategori: '' }));
+      setForm(f => ({ ...f, jenis: '', kategori: '', sub_bahan: '' }));
+      setSubBahanList([]);
       return;
     }
     setIsManualJenis(false);
     const mb = masterBahan.find((b: any) => b.nama_bahan === value);
     if (mb) {
-      setForm(f => ({ ...f, jenis: mb.nama_bahan, kategori: mb.kategori_bahan }));
+      setForm(f => ({ ...f, jenis: mb.nama_bahan, kategori: mb.kategori_bahan, sub_bahan: '' }));
+      api.getSubBahan({ bahan_id: mb.id, aktif: 'true' }).then(setSubBahanList).catch(() => setSubBahanList([]));
     } else {
-      setForm(f => ({ ...f, jenis: value }));
+      setForm(f => ({ ...f, jenis: value, sub_bahan: '' }));
+      setSubBahanList([]);
     }
   }
 
@@ -1212,6 +1221,7 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, master
             petani: r.petani || form.petani,
             wilayah: form.wilayah || 'Impor',
             jenis, kategori,
+            sub_bahan: r.sub_bahan || form.sub_bahan || '',
             qty: r.qty,
             price: r.price,
             deskripsi: desc,
@@ -1247,6 +1257,7 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, master
         petani: form.petani,
         wilayah: form.wilayah || 'India',
         jenis, kategori,
+        sub_bahan: form.sub_bahan || '',
         qty: form.qty,
         price: form.price,
         deskripsi: desc,
@@ -1425,7 +1436,7 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, master
                       <Select value={form.pic} onChange={e => handlePicChange(e.target.value)}>
                         <option value="">-- Pilih PIC --</option>
                         {picOptions.map(p => (
-                          <option key={p} value={p}>{p}</option>
+                          <option key={p.kode} value={p.kode}>{p.nama}</option>
                         ))}
                       </Select>
                     </div>
@@ -1435,24 +1446,17 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, master
                         <Package className="h-4 w-4 text-muted-foreground" />
                         Supplier
                       </label>
-                      <Select
+                      <Combobox
                         value={form.supplierId}
-                        onChange={e => handleSupplierChange(e.target.value)}
+                        onChange={handleSupplierChange}
                         disabled={!form.pic}
-                      >
-                        <option value="">{form.pic ? '-- Pilih Supplier --' : '-- Pilih PIC dulu --'}</option>
-                        {wilayahOptions.map(w => {
-                          const group = filteredSuppliers.filter((s: any) => s.wilayah === w);
-                          if (group.length === 0) return null;
-                          return (
-                            <optgroup key={w} label={`── ${w} ──`}>
-                              {group.map((s: any) => (
-                                <option key={s.id} value={s.id}>{s.name}</option>
-                              ))}
-                            </optgroup>
-                          );
-                        })}
-                      </Select>
+                        placeholder={form.pic ? 'Cari supplier...' : '-- Pilih PIC dulu --'}
+                        options={filteredSuppliers.map((s: any) => ({
+                          value: String(s.id),
+                          label: s.name,
+                          group: s.wilayah,
+                        }))}
+                      />
                       {selectedSupplier && (
                         <div className="mt-2 rounded-lg bg-accent/50 p-3 text-sm">
                           <div className="flex items-center gap-2">
@@ -1800,15 +1804,16 @@ function BuatPOModal({ suppliers, masterBahan, masterUkuran, masterWarna, master
                 <div>
                   <label className="text-sm font-medium mb-1.5 flex items-center gap-2">
                     <FileText className="h-4 w-4 text-muted-foreground" />
-                    Kategori
+                    Sub-Bahan
                   </label>
                   <Select
-                    value={form.kategori}
-                    onChange={e => update('kategori', e.target.value)}
+                    value={form.sub_bahan}
+                    onChange={e => update('sub_bahan', e.target.value)}
+                    disabled={!form.jenis}
                   >
-                    <option value="">-- Pilih Kategori --</option>
-                    {KATEGORI_OPTIONS.map(k => (
-                      <option key={k} value={k}>{k}</option>
+                    <option value="">{form.jenis ? (subBahanList.length > 0 ? '-- Pilih Sub-Bahan --' : 'Tidak ada sub-bahan') : '-- Pilih Bahan dulu --'}</option>
+                    {subBahanList.map((sb: any) => (
+                      <option key={sb.id} value={sb.nama_sub}>{sb.nama_sub} ({sb.kode_sub})</option>
                     ))}
                   </Select>
                 </div>

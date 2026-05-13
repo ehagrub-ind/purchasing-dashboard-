@@ -50,6 +50,7 @@ async def list_purchases(
                 "wilayah": p.wilayah, "deskripsi": p.deskripsi, "jenis": p.jenis,
                 "petani": getattr(p, "petani", "") or "",
                 "qty": p.qty, "price": p.price, "total": p.total, "kategori": p.kategori,
+                "sub_bahan": getattr(p, "sub_bahan", "") or "",
                 "currency": getattr(p, "currency", "IDR") or "IDR",
                 "supplier": {"name": p.supplier.name} if p.supplier else None,
             }
@@ -125,6 +126,7 @@ async def create_purchase(body: dict, db: AsyncSession = Depends(get_db)):
         jenis=body["jenis"],
         qty=qty, price=price, total=qty * price,
         kategori=body["kategori"],
+        sub_bahan=body.get("sub_bahan", ""),
         currency=body.get("currency", "IDR"),
     )
     db.add(p)
@@ -135,6 +137,7 @@ async def create_purchase(body: dict, db: AsyncSession = Depends(get_db)):
         "wilayah": p.wilayah, "deskripsi": p.deskripsi, "jenis": p.jenis,
         "petani": p.petani or "",
         "qty": p.qty, "price": p.price, "total": p.total, "kategori": p.kategori,
+        "sub_bahan": p.sub_bahan or "",
         "currency": p.currency,
         "supplier": {"name": p.supplier.name} if p.supplier else None,
     }
